@@ -13,10 +13,18 @@ use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
+/**
+ * Gère l'inscription de nouveaux utilisateurs.
+ *
+ * Après inscription, l'utilisateur est redirigé vers le tableau de bord
+ * correspondant à son rôle (patient ou médecin).
+ * Les admins ne peuvent pas s'inscrire eux-mêmes ; leur compte est créé
+ * directement par un administrateur existant.
+ */
 class RegisteredUserController extends Controller
 {
     /**
-     * Display the registration view.
+     * Affiche le formulaire d'inscription.
      */
     public function create(): View
     {
@@ -24,28 +32,46 @@ class RegisteredUserController extends Controller
     }
 
     /**
-     * Handle an incoming registration request.
+     * Traite la requête d'inscription.
+     *
+     * Valide le rôle (patient ou médecin uniquement), crée l'utilisateur,
+     * déclenche l'événement Registered, connecte l'utilisateur,
+     * puis redirige vers le tableau de bord approprié.
      *
      * @throws ValidationException
      */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'name'     => ['required', 'string', 'max:255'],
+            'email'    => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'role'     => ['required', 'string', 'in:patient,doctor'],
         ]);
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
+            'name'     => $request->name,
+            'email'    => $request->email,
             'password' => Hash::make($request->password),
+            'role'     => $request->role,
         ]);
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        return redirect($this->dashboardRouteFor($user));
+    }
+
+    /**
+     * Retourne l'URL du tableau de bord selon le rôle de l'utilisateur.
+     */
+    private function dashboardRouteFor(User $user): string
+    {
+        return match ($user->role) {
+            'admin'  => route('admin.dashboard',   absolute: false),
+            'doctor' => route('doctor.dashboard',  absolute: false),
+            default  => route('patient.dashboard', absolute: false),
+        };
     }
 }

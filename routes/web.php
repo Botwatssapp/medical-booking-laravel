@@ -1,52 +1,107 @@
 <?php
 
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\PatientController;
-use App\Http\Controllers\DoctorController;
-use App\Http\Controllers\AppointmentController;
-use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Admin\AppointmentController as AdminAppointment;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
+use App\Http\Controllers\Admin\DoctorController as AdminDoctor;
+use App\Http\Controllers\Admin\SpecialtyController as AdminSpecialty;
+use App\Http\Controllers\Admin\UserController as AdminUser;
+use App\Http\Controllers\Doctor\AppointmentController as DoctorAppointment;
+use App\Http\Controllers\Doctor\AvailabilityController;
+use App\Http\Controllers\Doctor\DashboardController as DoctorDashboard;
+use App\Http\Controllers\Doctor\ProfileController as DoctorProfile;
+use App\Http\Controllers\Patient\AppointmentController as PatientAppointment;
+use App\Http\Controllers\Patient\DashboardController as PatientDashboard;
+use App\Http\Controllers\Patient\DoctorController as PatientDoctor;
+use App\Http\Controllers\Patient\ProfileController as PatientProfile;
 use Illuminate\Support\Facades\Route;
 
-// Landing Page
-Route::get('/', fn() => view('welcome'));
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Les routes sont organisées par rôle : admin, doctor, patient.
+| Chaque groupe est protégé par le middleware d'authentification
+| et le middleware de rôle correspondant.
+|
+*/
 
-// Auth
-Route::get('/login',    [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login',   [AuthController::class, 'login']);
-Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-Route::post('/register',[AuthController::class, 'register']);
-Route::post('/logout',  [AuthController::class, 'logout'])->name('logout');
+// Page d'accueil publique
+Route::get('/', fn () => view('auth.login'))->name('home');
 
-// Patient
-Route::middleware(['auth', 'role:patient'])->prefix('patient')->group(function () {
-    Route::get('/dashboard',              [PatientController::class, 'dashboard'])->name('patient.dashboard');
-    Route::get('/doctors',                [PatientController::class, 'doctors'])->name('patient.doctors');
-    Route::get('/doctors/{doctor}/book',  [PatientController::class, 'bookAppointment'])->name('patient.book');
-    Route::post('/appointments',          [PatientController::class, 'storeAppointment'])->name('patient.appointments.store');
-    Route::get('/appointments',           [AppointmentController::class, 'index'])->name('patient.appointments');
-    Route::patch('/appointments/{appointment}', [AppointmentController::class, 'update'])->name('patient.appointments.update');
-    Route::delete('/appointments/{appointment}',[AppointmentController::class, 'destroy'])->name('patient.appointments.destroy');
+// =========================================================================
+// Routes Admin
+// =========================================================================
+Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
+
+    // Tableau de bord administrateur
+    Route::get('/dashboard', [AdminDashboard::class, 'index'])->name('admin.dashboard');
+
+    // Gestion des utilisateurs (sans show)
+    Route::resource('users', AdminUser::class)
+        ->names('admin.users')
+        ->except('show');
+
+    // Gestion des médecins (sans show)
+    Route::resource('doctors', AdminDoctor::class)
+        ->names('admin.doctors')
+        ->except('show');
+
+    // Gestion des spécialités (sans show)
+    Route::resource('specialties', AdminSpecialty::class)
+        ->names('admin.specialties')
+        ->except('show');
+
+    // Gestion des rendez-vous (lecture seule pour l'admin)
+    Route::get('appointments', [AdminAppointment::class, 'index'])->name('admin.appointments.index');
+    Route::get('appointments/{appointment}', [AdminAppointment::class, 'show'])->name('admin.appointments.show');
 });
 
-// Doctor
-Route::middleware(['auth', 'role:doctor'])->prefix('doctor')->group(function () {
-    Route::get('/dashboard',                          [DoctorController::class, 'dashboard'])->name('doctor.dashboard');
-    Route::get('/profile',                            [DoctorController::class, 'profile'])->name('doctor.profile');
-    Route::put('/profile',                            [DoctorController::class, 'updateProfile'])->name('doctor.profile.update');
-    Route::patch('/appointments/{appointment}/confirm',[DoctorController::class, 'confirmAppointment'])->name('doctor.confirm');
-    Route::patch('/appointments/{appointment}/refuse', [DoctorController::class, 'refuseAppointment'])->name('doctor.refuse');
+// =========================================================================
+// Routes Patient
+// =========================================================================
+Route::middleware(['auth', 'patient'])->prefix('patient')->group(function () {
+
+    // Tableau de bord patient (utilise le contrôleur pour charger les données)
+    Route::get('/dashboard', [PatientDashboard::class, 'index'])->name('patient.dashboard');
+
+    // Annuaire des médecins
+    Route::get('doctors', [PatientDoctor::class, 'index'])->name('patient.doctors.index');
+    Route::get('doctors/{doctor}', [PatientDoctor::class, 'show'])->name('patient.doctors.show');
+
+    // Gestion des rendez-vous du patient
+    Route::resource('appointments', PatientAppointment::class)
+        ->names('patient.appointments');
+
+    // Profil patient
+    Route::get('profile/edit', [PatientProfile::class, 'edit'])->name('patient.profile.edit');
+    Route::patch('profile', [PatientProfile::class, 'update'])->name('patient.profile.update');
 });
 
-// Admin
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
-    Route::get('/dashboard',                [AdminController::class, 'dashboard'])->name('admin.dashboard');
-    Route::get('/users',                    [AdminController::class, 'users'])->name('admin.users');
-    Route::delete('/users/{user}',          [AdminController::class, 'deleteUser'])->name('admin.users.delete');
-    Route::get('/doctors',                  [AdminController::class, 'doctors'])->name('admin.doctors');
-    Route::post('/doctors',                 [AdminController::class, 'storeDoctor'])->name('admin.doctors.store');
-    Route::delete('/doctors/{doctor}',      [AdminController::class, 'deleteDoctor'])->name('admin.doctors.delete');
-    Route::get('/specialities',             [AdminController::class, 'specialities'])->name('admin.specialities');
-    Route::post('/specialities',            [AdminController::class, 'storeSpeciality'])->name('admin.specialities.store');
-    Route::delete('/specialities/{speciality}',[AdminController::class, 'deleteSpeciality'])->name('admin.specialities.delete');
-    Route::get('/appointments',             [AdminController::class, 'appointments'])->name('admin.appointments');
+// =========================================================================
+// Routes Doctor
+// =========================================================================
+Route::middleware(['auth', 'doctor'])->prefix('doctor')->group(function () {
+
+    // Tableau de bord médecin
+    Route::get('/dashboard', [DoctorDashboard::class, 'index'])->name('doctor.dashboard');
+
+    // Gestion des disponibilités
+    Route::resource('availabilities', AvailabilityController::class)
+        ->names('doctor.availabilities');
+
+    // Gestion des rendez-vous du médecin
+    Route::get('appointments', [DoctorAppointment::class, 'index'])->name('doctor.appointments.index');
+    Route::get('appointments/{appointment}', [DoctorAppointment::class, 'show'])->name('doctor.appointments.show');
+    Route::patch('appointments/{appointment}', [DoctorAppointment::class, 'update'])->name('doctor.appointments.update');
+    Route::delete('appointments/{appointment}', [DoctorAppointment::class, 'destroy'])->name('doctor.appointments.destroy');
+
+    // Profil médecin
+    Route::get('profile/edit', [DoctorProfile::class, 'edit'])->name('doctor.profile.edit');
+    Route::patch('profile', [DoctorProfile::class, 'update'])->name('doctor.profile.update');
 });
+
+// =========================================================================
+// Routes d'authentification (Breeze)
+// =========================================================================
+require __DIR__.'/auth.php';

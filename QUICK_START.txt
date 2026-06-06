@@ -1,0 +1,258 @@
+═══════════════════════════════════════════════════════════════════════════════
+        APPLICATION GESTION DE RÉSERVATION MÉDICALE - LARAVEL 12
+═══════════════════════════════════════════════════════════════════════════════
+
+📋 GUIDE DE DÉMARRAGE RAPIDE
+
+═══════════════════════════════════════════════════════════════════════════════
+1️⃣  INSTALLATION INITIALE
+═══════════════════════════════════════════════════════════════════════════════
+
+Sur Windows:
+    1. Double-cliquez sur: install.bat
+    OU via terminal (cmd ou PowerShell):
+        install.bat
+
+Sur Linux/Mac:
+    1. Ouvrez un terminal
+    2. cd medical-booking-laravel
+    3. bash install.sh
+
+Le script d'installation va:
+    ✓ Installer les dépendances PHP (Composer)
+    ✓ Configurer le fichier .env
+    ✓ Générer la clé d'application
+    ✓ Exécuter les migrations
+    ✓ Remplir la base de données avec des données de test
+    ✓ Installer les dépendances JavaScript (npm)
+    ✓ Compiler les assets (CSS, JS)
+
+═══════════════════════════════════════════════════════════════════════════════
+2️⃣  LANCEMENT DU SERVEUR
+═══════════════════════════════════════════════════════════════════════════════
+
+Ouvrez un terminal dans le répertoire du projet et exécutez:
+
+    php artisan serve
+
+Le serveur démarre sur: http://localhost:8000
+
+═══════════════════════════════════════════════════════════════════════════════
+3️⃣  COMPTES DE TEST
+═══════════════════════════════════════════════════════════════════════════════
+
+ADMINISTRATEUR:
+    Email: admin@gmail.com
+    Mot de passe: password
+
+PATIENTS:
+    Email: patient@[random].com (50 patients créés automatiquement)
+    Mot de passe: password
+
+MÉDECINS:
+    Email: doctor@[random].com (20 médecins créés automatiquement)
+    Mot de passe: password
+
+═══════════════════════════════════════════════════════════════════════════════
+4️⃣  ACCÈS AUX DIFFÉRENTS PANNEAUX
+═══════════════════════════════════════════════════════════════════════════════
+
+ADMIN:
+    URL: http://localhost:8000/admin/dashboard
+    Fonctionnalités:
+        - Gérer les utilisateurs
+        - Gérer les médecins
+        - Gérer les spécialités
+        - Suivre les rendez-vous
+        - Voir les statistiques
+
+PATIENT:
+    URL: http://localhost:8000/patient/dashboard
+    Fonctionnalités:
+        - Consulter la liste des médecins
+        - Réserver un rendez-vous
+        - Modifier/Annuler ses rendez-vous
+        - Gérer son profil
+
+MÉDECIN:
+    URL: http://localhost:8000/doctor/dashboard
+    Fonctionnalités:
+        - Gérer ses disponibilités
+        - Consulter ses rendez-vous
+        - Accepter/Refuser les rendez-vous
+        - Gérer son profil
+
+═══════════════════════════════════════════════════════════════════════════════
+5️⃣  STRUCTURE DES FICHIERS CRÉÉS
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ MODÈLES (app/Models/):
+    - User.php (Patient, Médecin, Admin)
+    - Doctor.php
+    - Appointment.php
+    - Availability.php
+    - Speciality.php
+
+✅ MIGRATIONS (database/migrations/):
+    - create_users_table.php
+    - create_specialities_table.php
+    - create_doctors_table.php
+    - create_availabilities_table.php
+    - create_appointments_table.php
+
+✅ FACTORIES (database/factories/):
+    - UserFactory.php
+    - DoctorFactory.php
+    - AppointmentFactory.php
+    - AvailabilityFactory.php
+    - SpecialityFactory.php
+
+✅ SEEDERS (database/seeders/):
+    - DatabaseSeeder.php
+    - UserSeeder.php
+    - DoctorSeeder.php
+    - SpecialitySeeder.php
+    - AvailabilitySeeder.php
+    - AppointmentSeeder.php
+
+✅ CONTRÔLEURS (app/Http/Controllers/):
+    Admin:
+        - Admin/DashboardController.php
+        - Admin/UserController.php
+        - Admin/DoctorController.php
+        - Admin/SpecialtyController.php
+        - Admin/AppointmentController.php
+    
+    Patient:
+        - Patient/DoctorController.php
+        - Patient/AppointmentController.php
+        - Patient/ProfileController.php
+    
+    Médecin:
+        - Doctor/DashboardController.php
+        - Doctor/AvailabilityController.php
+        - Doctor/AppointmentController.php
+        - Doctor/ProfileController.php
+
+✅ FORM REQUESTS (app/Http/Requests/):
+    - StoreAppointmentRequest.php
+    - UpdateAppointmentRequest.php
+    - StoreDoctorRequest.php
+    - UpdateDoctorRequest.php
+    - StoreSpecialtyRequest.php
+    - UpdateSpecialtyRequest.php
+
+✅ MIDDLEWARE (app/Http/Middleware/):
+    - AdminMiddleware.php
+    - DoctorMiddleware.php
+    - PatientMiddleware.php
+
+✅ POLICIES (app/Policies/):
+    - AppointmentPolicy.php
+
+✅ VUES BLADE (resources/views/):
+    admin/
+        - dashboard.blade.php
+        - users/index.blade.php, create.blade.php, edit.blade.php
+        - doctors/index.blade.php, create.blade.php, edit.blade.php
+        - specialties/index.blade.php, create.blade.php, edit.blade.php
+        - appointments/index.blade.php, show.blade.php
+    
+    patient/
+        - dashboard.blade.php
+        - doctors/index.blade.php, show.blade.php
+        - appointments/index.blade.php, create.blade.php, edit.blade.php
+        - profile/edit.blade.php
+    
+    doctor/
+        - dashboard.blade.php
+        - availabilities/index.blade.php, create.blade.php
+        - appointments/index.blade.php, show.blade.php
+        - profile/edit.blade.php
+
+═══════════════════════════════════════════════════════════════════════════════
+6️⃣  COMMANDES ARTISAN UTILES
+═══════════════════════════════════════════════════════════════════════════════
+
+Réinitialiser la base de données:
+    php artisan migrate:fresh --seed
+
+Vider le cache:
+    php artisan cache:clear
+
+Consulter la base de données avec Tinker:
+    php artisan tinker
+
+Générer une migration:
+    php artisan make:migration create_table_name
+
+Générer un modèle:
+    php artisan make:model ModelName
+
+Générer un contrôleur:
+    php artisan make:controller ControllerName
+
+═══════════════════════════════════════════════════════════════════════════════
+7️⃣  DÉPANNAGE
+═══════════════════════════════════════════════════════════════════════════════
+
+❌ Erreur "File not found" pour les images:
+    ✓ Exécutez: php artisan storage:link
+
+❌ Erreur "SQLSTATE[HY000]":
+    ✓ Vérifiez que MySQL est lancé
+    ✓ Vérifiez les credentials dans .env
+    ✓ Exécutez: php artisan migrate
+
+❌ Erreur "Class not found":
+    ✓ Exécutez: composer dump-autoload
+
+❌ Problème de permission:
+    ✓ Windows: Aucune action nécessaire
+    ✓ Linux: chmod -R 775 storage bootstrap/cache
+
+═══════════════════════════════════════════════════════════════════════════════
+8️⃣  DOCUMENTATION COMPLÈTE
+═══════════════════════════════════════════════════════════════════════════════
+
+Consultez SETUP.md pour:
+    - Installation détaillée
+    - Description de l'architecture
+    - Fonctionnalités complètes
+    - Structure de base de données
+    - Ressources externes
+
+═══════════════════════════════════════════════════════════════════════════════
+9️⃣  PROCHAINES ÉTAPES DE DÉVELOPPEMENT
+═══════════════════════════════════════════════════════════════════════════════
+
+Optionnel - Améliorations possibles:
+
+    📧 Email:
+        - Configurer l'envoi d'emails (SMTP)
+        - Implémenter les notifications par email
+    
+    📱 API REST:
+        - Créer une API avec Laravel Sanctum
+        - Ajouter l'authentification par token
+    
+    🧪 Tests:
+        - Ajouter des tests unitaires
+        - Ajouter des tests d'intégration
+    
+    📊 Rapports:
+        - Générer des PDF de rapports
+        - Créer des graphiques avancés
+    
+    🔔 WebSockets:
+        - Notifications en temps réel avec Pusher
+        - Chat patient-médecin
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ Installation et configuration terminées!
+🚀 L'application est prête à l'emploi.
+
+Pour tout problème: Consultez SETUP.md ou lancez les commandes Artisan.
+
+═══════════════════════════════════════════════════════════════════════════════

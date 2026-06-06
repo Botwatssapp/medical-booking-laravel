@@ -1,0 +1,476 @@
+═══════════════════════════════════════════════════════════════════════════════
+        GUIDE POUR LES DÉBUTANTS - PREMIÈRE UTILISATION
+═══════════════════════════════════════════════════════════════════════════════
+
+Ce guide est destiné à ceux qui découvrent Laravel pour la première fois.
+
+═══════════════════════════════════════════════════════════════════════════════
+1️⃣  COMPRENDRE L'APPLICATION
+═══════════════════════════════════════════════════════════════════════════════
+
+CONCEPT GÉNÉRAL:
+
+C'est une plateforme où:
+  • Les PATIENTS peuvent réserver des rendez-vous chez les MÉDECINS
+  • Les MÉDECINS peuvent gérer leurs disponibilités et leurs rendez-vous
+  • Les ADMINISTRATEURS supervisent toute l'application
+
+TROIS RÔLES:
+
+1. PATIENT
+   - Se connecte
+   - Voit la liste des médecins
+   - Réserve un rendez-vous
+   - Suivi de ses rendez-vous
+
+2. MÉDECIN
+   - Se connecte
+   - Ajoute ses disponibilités
+   - Voit les rendez-vous demandés
+   - Accepte ou refuse les rendez-vous
+
+3. ADMINISTRATEUR
+   - Gère les utilisateurs
+   - Gère les médecins
+   - Supervise les rendez-vous
+   - Voit les statistiques
+
+═══════════════════════════════════════════════════════════════════════════════
+2️⃣  STRUCTURE DE L'APPLICATION
+═══════════════════════════════════════════════════════════════════════════════
+
+DOSSIERS PRINCIPAUX:
+
+app/
+  └─ Contient la logique métier
+    ├─ Models/       → Représentation des données (Patient, Médecin, etc.)
+    ├─ Controllers/  → Logique de traitement des requêtes
+    ├─ Requests/     → Validations des formulaires
+    └─ Policies/     → Autorisations
+
+database/
+  └─ Contient la base de données
+    ├─ migrations/   → Schéma de la base de données
+    ├─ factories/    → Génération de données de test
+    └─ seeders/      → Données initiales
+
+resources/views/
+  └─ Contient les pages affichées au navigateur
+    ├─ admin/        → Pages admin
+    ├─ patient/      → Pages patient
+    ├─ doctor/       → Pages médecin
+    └─ layouts/      → Template général
+
+routes/
+  └─ web.php        → Liste des URLs de l'application
+
+═══════════════════════════════════════════════════════════════════════════════
+3️⃣  INSTALLATION ÉTAPE PAR ÉTAPE
+═══════════════════════════════════════════════════════════════════════════════
+
+ÉTAPE 1: Préparer l'environnement
+
+Pré-requis à installer (si pas fait):
+  • PHP 8.3+ (https://www.php.net/)
+  • MySQL 8.0+ (https://www.mysql.com/)
+  • Composer (https://getcomposer.org/)
+  • Node.js 18+ (https://nodejs.org/)
+
+Vérifier:
+  php --version
+  mysql --version
+  composer --version
+  node --version
+
+ÉTAPE 2: Cloner/Télécharger le projet
+
+Copier le dossier medical-booking-laravel sur votre machine.
+
+ÉTAPE 3: Installer automatiquement (RECOMMANDÉ)
+
+Windows:
+  1. Double-cliquez: install.bat
+  2. Attendez la fin
+
+Linux/Mac:
+  1. Ouvrez terminal
+  2. bash install.sh
+  3. Attendez la fin
+
+OU installer manuellement:
+
+  1. Ouvrez terminal dans le dossier du projet
+  2. composer install
+  3. cp .env.example .env
+  4. php artisan key:generate
+  5. php artisan migrate
+  6. php artisan db:seed
+  7. php artisan storage:link
+  8. npm install
+  9. npm run build
+
+═══════════════════════════════════════════════════════════════════════════════
+4️⃣  LANCEMENT DE L'APPLICATION
+═══════════════════════════════════════════════════════════════════════════════
+
+ÉTAPE 1: Vérifier que MySQL est lancé
+
+Windows:
+  • Services → MySQL80 → Démarrer
+
+Linux/Mac:
+  • brew services start mysql (si installé via Homebrew)
+
+ÉTAPE 2: Lancer le serveur Laravel
+
+Ouvrez un terminal dans le dossier du projet:
+
+  php artisan serve
+
+Vous devriez voir:
+  INFO  Server running on [http://127.0.0.1:8000].
+
+ÉTAPE 3: Ouvrir l'application
+
+Allez sur: http://localhost:8000
+
+Vous devriez voir la page d'accueil avec "Bonjour, Visiteur"
+
+═══════════════════════════════════════════════════════════════════════════════
+5️⃣  PREMIER TEST - CONNECTEZ-VOUS EN TANT QU'ADMIN
+═══════════════════════════════════════════════════════════════════════════════
+
+1. Allez à: http://localhost:8000/login
+2. Entrez:
+   Email: admin@gmail.com
+   Password: password
+3. Cliquez "Se connecter"
+
+Attendu:
+  • Redirection vers http://localhost:8000/admin/dashboard
+  • Vous voyez un tableau de bord avec des statistiques
+
+Vue d'ensemble du dashboard admin:
+  • Total Patients
+  • Total Médecins
+  • Total Rendez-vous
+  • Rendez-vous d'aujourd'hui
+  • Graphiques et statistiques
+
+═══════════════════════════════════════════════════════════════════════════════
+6️⃣  NAVIGATION ADMIN
+═══════════════════════════════════════════════════════════════════════════════
+
+En haut à gauche, vous verrez un menu avec:
+
+UTILISATEURS:
+  • Voir tous les utilisateurs
+  • Créer un nouvel utilisateur
+  • Éditer un utilisateur
+  • Supprimer un utilisateur
+
+MÉDECINS:
+  • Voir tous les médecins
+  • Créer un médecin
+  • Assigner à une spécialité
+  • Éditer les infos du médecin
+
+SPÉCIALITÉS:
+  • Voir les spécialités (Cardiologie, etc.)
+  • Créer une spécialité
+  • Éditer une spécialité
+
+RENDEZ-VOUS:
+  • Voir tous les rendez-vous
+  • Consulter les détails
+
+═══════════════════════════════════════════════════════════════════════════════
+7️⃣  TEST PATIENT
+═══════════════════════════════════════════════════════════════════════════════
+
+LOGOUT:
+  • Cliquez sur "Déconnexion" (haut droit)
+
+CREATE ACCOUNT:
+  • Allez à: http://localhost:8000/register
+  • Créez un compte avec:
+    - Name: Test Patient
+    - Email: testpatient@test.com
+    - Password: password
+  • Sélectionnez: Je suis un patient
+  • Cliquez "Enregistrer"
+
+Attendu:
+  • Vous êtes maintenant connecté
+  • Redirection vers: /patient/dashboard
+
+EXPLORER LE PATIENT DASHBOARD:
+  • Voir mon profil
+  • Bouton "Prendre RDV"
+  • Mes rendez-vous
+
+RÉSERVER UN RENDEZ-VOUS:
+  1. Cliquez: "Prendre RDV"
+  2. Vous voyez la liste des médecins
+  3. Sélectionnez un médecin
+  4. Voyez ses disponibilités
+  5. Sélectionnez une date/heure
+  6. Cliquez "Réserver"
+
+Attendu:
+  • Rendez-vous créé avec status "pending"
+  • Vous le voyez dans votre liste de rendez-vous
+
+═══════════════════════════════════════════════════════════════════════════════
+8️⃣  TEST MÉDECIN
+═══════════════════════════════════════════════════════════════════════════════
+
+LOGOUT ET CRÉER UN COMPTE MÉDECIN:
+  • Cliquez "Déconnexion"
+  • Allez à /register
+  • Créez un compte:
+    - Name: Test Doctor
+    - Email: testdoctor@test.com
+    - Password: password
+  • Sélectionnez: Je suis un médecin
+  • Cliquez "Enregistrer"
+
+EXPLORER LE DOCTOR DASHBOARD:
+  • Voir mes rendez-vous
+  • Mes disponibilités
+  • Mes statistiques
+
+AJOUTER DES DISPONIBILITÉS:
+  1. Cliquez: "Ajouter disponibilité"
+  2. Sélectionnez une date
+  3. Entrez l'heure de début et fin
+  4. Cliquez "Ajouter"
+
+Attendu:
+  • Disponibilité créée
+  • Patients peuvent voir et réserver
+
+GÉRER LES RENDEZ-VOUS:
+  1. Allez à: /doctor/appointments
+  2. Voyez les rendez-vous en attente (status = pending)
+  3. Cliquez sur un rendez-vous
+  4. Acceptez ou refusez
+
+Attendu:
+  • Status change en "accepted" ou "rejected"
+  • Le patient voit le changement
+
+═══════════════════════════════════════════════════════════════════════════════
+9️⃣  COMPRENDRE LE CYCLE DE VIE D'UN RENDEZ-VOUS
+═══════════════════════════════════════════════════════════════════════════════
+
+CRÉATION (Patient):
+  Patient réserve → Status = "pending"
+
+RÉPONSE DU MÉDECIN:
+  Médecin accepte   → Status = "accepted"
+  OU
+  Médecin refuse    → Status = "rejected"
+
+ANNULATION (Patient):
+  Patient peut annuler → Status = "cancelled"
+  (Sauf si date passée)
+
+RÉALISATION:
+  Rendez-vous réalisé → Status = "completed"
+  (Automatiquement après la date)
+
+STATUTS POSSIBLES:
+  ✓ pending   = En attente de réponse
+  ✓ accepted  = Accepté (confirmé)
+  ✓ rejected  = Refusé
+  ✓ cancelled = Annulé
+  ✓ completed = Terminé
+  ✓ missed    = Manqué
+
+═══════════════════════════════════════════════════════════════════════════════
+🔟 CONCEPTS IMPORTANTS POUR LARAVEL
+═══════════════════════════════════════════════════════════════════════════════
+
+MODELS:
+  • Représentent les données (User, Doctor, Appointment)
+  • Lien direct avec la base de données
+  • Contiennent les relations entre données
+
+CONTROLLERS:
+  • Gèrent la logique métier
+  • Reçoivent les requêtes
+  • Retournent des réponses
+
+ROUTES:
+  • Définissent les URLs de l'application
+  • Fichier: routes/web.php
+  • Exemple: GET /patient/dashboard → PatientController@dashboard
+
+VIEWS:
+  • Fichiers Blade (.blade.php)
+  • Affichent les données au navigateur
+  • Contiennent HTML + CSS
+
+MIDDLEWARE:
+  • Filtres entre la requête et le controller
+  • Exemple: Vérifier que l'utilisateur est connecté
+  • Exemple: Vérifier le rôle (admin, patient, doctor)
+
+POLICIES:
+  • Contrôle des autorisations
+  • Peut-on modifier cet objet?
+  • Peut-on voir ce rendez-vous?
+
+═══════════════════════════════════════════════════════════════════════════════
+1️⃣1️⃣ MODIFIER L'APPLICATION
+═══════════════════════════════════════════════════════════════════════════════
+
+AJOUTER UN CHAMP À UN FORMULAIRE:
+
+1. Modifier la migration (database/migrations/)
+2. Ajouter la colonne au tableau
+3. Modifier le Model (app/Models/)
+4. Modifier le Form Request (app/Http/Requests/)
+5. Modifier la vue Blade (resources/views/)
+6. Modifier le Controller
+
+AJOUTER UNE NOUVELLE ROUTE:
+
+1. Ouvrir routes/web.php
+2. Ajouter la route:
+   Route::get('/path', [ControllerName::class, 'method']);
+3. Créer le controller si nécessaire:
+   php artisan make:controller ControllerName
+4. Créer la méthode dans le controller
+5. Créer la vue Blade
+
+CRÉER UN NOUVEAU FORMULAIRE:
+
+1. Créer une Form Request:
+   php artisan make:request StoreFormRequest
+2. Ajouter les règles de validation
+3. Créer la vue avec le formulaire
+4. Ajouter la route POST
+5. Ajouter la méthode dans le controller
+
+═══════════════════════════════════════════════════════════════════════════════
+1️⃣2️⃣ COMMANDES UTILES
+═══════════════════════════════════════════════════════════════════════════════
+
+ARTISAN COMMANDS (php artisan):
+
+make:model User
+  → Crée un nouveau Model
+
+make:controller NameController
+  → Crée un nouveau Controller
+
+make:request StoreUserRequest
+  → Crée un nouveau Form Request
+
+make:middleware AuthMiddleware
+  → Crée un nouveau Middleware
+
+make:seeder UserSeeder
+  → Crée un nouveau Seeder
+
+make:migration create_users_table
+  → Crée une nouvelle Migration
+
+make:test UserTest
+  → Crée un test
+
+MIGRATION COMMANDS:
+
+migrate
+  → Exécute les migrations
+
+migrate:fresh
+  → Réinitialise la base de données
+
+migrate:rollback
+  → Annule la dernière migration
+
+UTILITY COMMANDS:
+
+db:seed
+  → Remplit la base de données avec des données
+
+tinker
+  → REPL interactive pour tester le code
+
+serve
+  → Lance le serveur
+
+key:generate
+  → Génère APP_KEY
+
+storage:link
+  → Crée un symlink pour les fichiers public
+
+cache:clear
+  → Vide le cache
+
+═══════════════════════════════════════════════════════════════════════════════
+1️⃣3️⃣ DÉPANNAGE BASIQUE
+═══════════════════════════════════════════════════════════════════════════════
+
+ERROR: Class not found
+  ✓ Exécuter: composer dump-autoload
+
+ERROR: Migration not found
+  ✓ Vérifier que le fichier existe dans database/migrations/
+  ✓ Exécuter: php artisan migrate
+
+ERROR: View not found
+  ✓ Vérifier le chemin dans resources/views/
+  ✓ Vérifier l'extension .blade.php
+
+ERROR: Undefined variable in view
+  ✓ Vérifier que le controller passe la variable:
+    return view('path', ['variable' => $value]);
+
+ERROR: 403 Forbidden
+  ✓ Problème d'autorisation
+  ✓ Vérifier le middleware ou la policy
+
+ERROR: 404 Not Found
+  ✓ Route n'existe pas
+  ✓ Vérifier routes/web.php
+
+═══════════════════════════════════════════════════════════════════════════════
+1️⃣4️⃣ RESSOURCES D'APPRENTISSAGE
+═══════════════════════════════════════════════════════════════════════════════
+
+DOCUMENTATION LARAVEL:
+  • https://laravel.com/docs
+
+TUTORIELS:
+  • https://laravel.com/docs/11
+  • https://laracasts.com (gratuit et payant)
+
+COMMUNAUTÉ:
+  • Discord: https://discord.gg/laravel
+  • Stack Overflow: Tag [laravel]
+
+CHEAT SHEETS:
+  • Laravel cheat sheet
+  • Blade cheat sheet
+
+═══════════════════════════════════════════════════════════════════════════════
+1️⃣5️⃣ PROCHAINES ÉTAPES
+═══════════════════════════════════════════════════════════════════════════════
+
+Vous savez maintenant utiliser l'application!
+
+Prochaines étapes:
+  1. Testez les trois rôles (Admin, Patient, Doctor)
+  2. Explorez le code source
+  3. Modifiez quelque chose de simple
+  4. Lisez la documentation Laravel
+  5. Ajoutez vos propres fonctionnalités
+
+Bonne chance! 🚀
+
+═══════════════════════════════════════════════════════════════════════════════
