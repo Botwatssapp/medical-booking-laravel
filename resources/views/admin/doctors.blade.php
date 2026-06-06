@@ -161,6 +161,10 @@
                 @endforelse
             </tbody>
         </table>
+        {{-- Pagination --}}
+        <div class="px-6 py-4 border-t border-[#c2c6d4]">
+            {{ $doctors->links() }}
+        </div>
     </div>
 </div>
 @endsection
