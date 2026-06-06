@@ -1,0 +1,321 @@
+═══════════════════════════════════════════════════════════════════════════════
+        ⚡ QUICK REFERENCE GUIDE - COMMANDES & ACTIONS
+═══════════════════════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════════════════════
+🚀 DÉMARRAGE RAPIDE (Recopier/Coller)
+═══════════════════════════════════════════════════════════════════════════════
+
+WINDOWS:
+  install.bat
+  php artisan serve
+
+LINUX/MAC:
+  bash install.sh
+  php artisan serve
+
+PUIS ALLEZ À:
+  http://localhost:8000
+
+═══════════════════════════════════════════════════════════════════════════════
+🔐 COMPTES DE TEST
+═══════════════════════════════════════════════════════════════════════════════
+
+ADMIN:
+  Email:    admin@gmail.com
+  Password: password
+  URL:      http://localhost:8000/admin/dashboard
+
+PATIENT:
+  Email:    patient@[random].com
+  Password: password
+  URL:      http://localhost:8000/patient/dashboard
+
+DOCTOR:
+  Email:    doctor@[random].com
+  Password: password
+  URL:      http://localhost:8000/doctor/dashboard
+
+═══════════════════════════════════════════════════════════════════════════════
+📋 COMMANDES ESSENTIELLES
+═══════════════════════════════════════════════════════════════════════════════
+
+INSTALLATION:
+  composer install              # Installer les dépendances PHP
+  npm install                   # Installer les dépendances JS
+  php artisan key:generate      # Générer APP_KEY
+
+BASE DE DONNÉES:
+  php artisan migrate           # Exécuter les migrations
+  php artisan migrate:fresh     # Réinitialiser (DANGER!)
+  php artisan db:seed           # Remplir avec données de test
+  php artisan tinker            # Console interactive
+
+SERVEUR:
+  php artisan serve             # Lancer le serveur
+  npm run dev                   # Watch assets (dev)
+  npm run build                 # Compiler assets (prod)
+
+CACHE:
+  php artisan cache:clear       # Vider le cache
+  php artisan config:cache      # Cache la config
+  composer dump-autoload        # Recharger autoloader
+
+STOCKAGE:
+  php artisan storage:link      # Lier le storage public
+
+═══════════════════════════════════════════════════════════════════════════════
+📱 URLs PRINCIPALES
+═══════════════════════════════════════════════════════════════════════════════
+
+HOME PAGE:
+  http://localhost:8000/
+
+AUTH:
+  http://localhost:8000/login
+  http://localhost:8000/register
+
+ADMIN:
+  http://localhost:8000/admin/dashboard
+  http://localhost:8000/admin/users
+  http://localhost:8000/admin/doctors
+  http://localhost:8000/admin/specialties
+  http://localhost:8000/admin/appointments
+
+PATIENT:
+  http://localhost:8000/patient/dashboard
+  http://localhost:8000/patient/doctors
+  http://localhost:8000/patient/appointments
+  http://localhost:8000/patient/profile/edit
+
+DOCTOR:
+  http://localhost:8000/doctor/dashboard
+  http://localhost:8000/doctor/availabilities
+  http://localhost:8000/doctor/appointments
+  http://localhost:8000/doctor/profile/edit
+
+API:
+  http://localhost:8000/api/doctor/{id}/availabilities
+
+═══════════════════════════════════════════════════════════════════════════════
+🔧 CRÉATION RAPIDE (Scaffold)
+═══════════════════════════════════════════════════════════════════════════════
+
+Créer un modèle:
+  php artisan make:model ModelName -m  # Avec migration
+
+Créer un contrôleur:
+  php artisan make:controller ControllerName -r  # Ressource
+
+Créer une Form Request:
+  php artisan make:request StoreRequest
+
+Créer un Middleware:
+  php artisan make:middleware MiddlewareName
+
+Créer une Migration:
+  php artisan make:migration create_table_name
+
+Créer un Seeder:
+  php artisan make:seeder NameSeeder
+
+Créer une Policy:
+  php artisan make:policy PolicyName --model=Model
+
+═══════════════════════════════════════════════════════════════════════════════
+🐛 DÉPANNAGE RAPIDE
+═══════════════════════════════════════════════════════════════════════════════
+
+PROBLÈME: "Class not found"
+  SOLUTION: composer dump-autoload
+
+PROBLÈME: "Database connection failed"
+  SOLUTION: Vérifier MySQL, configurer .env (DB_HOST, DB_USERNAME, DB_PASSWORD)
+
+PROBLÈME: "File not found" pour images
+  SOLUTION: php artisan storage:link
+
+PROBLÈME: "No such file or directory" npm
+  SOLUTION: Installer Node.js depuis nodejs.org
+
+PROBLÈME: "Undefined variable in view"
+  SOLUTION: Vérifier que le controller passe la variable à la vue
+
+PROBLÈME: "403 Unauthorized"
+  SOLUTION: Vérifier les middleware et policies
+
+PROBLÈME: "404 Not Found"
+  SOLUTION: Vérifier la route dans routes/web.php
+
+═══════════════════════════════════════════════════════════════════════════════
+📂 STRUCTURE DE DOSSIERS
+═══════════════════════════════════════════════════════════════════════════════
+
+app/Models/          → Modèles Eloquent
+app/Http/Controllers/  → Contrôleurs (Admin, Patient, Doctor)
+app/Http/Requests/   → Validation des formulaires
+app/Http/Middleware/ → Middleware de sécurité
+app/Policies/        → Policies d'autorisation
+database/migrations/ → Schéma de la BD
+database/factories/  → Générateurs de test data
+database/seeders/    → Données initiales
+resources/views/     → Templates Blade
+routes/              → Définition des routes
+
+═══════════════════════════════════════════════════════════════════════════════
+🎯 CAS D'USAGE COURANTS
+═══════════════════════════════════════════════════════════════════════════════
+
+AJOUTER UN NOUVEAU CHAMP:
+  1. Créer migration: php artisan make:migration
+  2. Éditer la migration (ajouter la colonne)
+  3. Éditer le Model (si besoin fillable/casts)
+  4. Éditer Form Request (validation)
+  5. Éditer la vue Blade
+  6. Éditer le Controller
+
+CRÉER UNE NOUVELLE PAGE:
+  1. Ajouter la route dans routes/web.php
+  2. Créer le contrôleur: php artisan make:controller
+  3. Créer la vue: resources/views/[nom].blade.php
+  4. Implémenter la logique dans le contrôleur
+
+AJOUTER UNE VALIDATION:
+  1. Créer Form Request: php artisan make:request
+  2. Ajouter les règles dans rules()
+  3. Ajouter autorisation dans authorize()
+  4. Utiliser dans le contrôleur: public function store(FormRequest $request)
+
+═══════════════════════════════════════════════════════════════════════════════
+📊 STATUTS DE RENDEZ-VOUS
+═══════════════════════════════════════════════════════════════════════════════
+
+pending   → En attente de réponse du médecin
+accepted  → Accepté par le médecin ✓
+rejected  → Refusé par le médecin ✗
+cancelled → Annulé par le patient
+completed → Rendez-vous réalisé
+missed    → Rendez-vous manqué
+
+═══════════════════════════════════════════════════════════════════════════════
+🔐 RÔLES UTILISATEURS
+═══════════════════════════════════════════════════════════════════════════════
+
+ADMIN:
+  ✓ Tous les droits
+  ✓ Gère utilisateurs, médecins, spécialités
+  ✓ Accès en tant qu'admin@gmail.com
+
+PATIENT:
+  ✓ Consulter médecins
+  ✓ Réserver rendez-vous
+  ✓ Gérer ses rendez-vous
+  ✓ Éditer profil
+
+DOCTOR:
+  ✓ Gérer disponibilités
+  ✓ Voir ses rendez-vous
+  ✓ Accepter/Refuser rendez-vous
+  ✓ Éditer profil
+
+═══════════════════════════════════════════════════════════════════════════════
+💾 GESTION DE LA BASE DE DONNÉES
+═══════════════════════════════════════════════════════════════════════════════
+
+VOIR LES DONNÉES:
+  php artisan tinker
+  > User::all()
+  > Appointment::where('status', 'pending')->get()
+  > Doctor::with('speciality')->get()
+
+RÉINITIALISER LA BD:
+  php artisan migrate:fresh --seed
+
+AJOUTER DES DONNÉES:
+  php artisan tinker
+  > User::factory(10)->create()
+  > Doctor::factory(5)->create()
+
+═══════════════════════════════════════════════════════════════════════════════
+🧪 TESTING
+═══════════════════════════════════════════════════════════════════════════════
+
+CRÉER UN TEST:
+  php artisan make:test FeatureNameTest
+  php artisan make:test UnitNameTest --unit
+
+LANCER LES TESTS:
+  ./vendor/bin/phpunit
+  ./vendor/bin/phpunit tests/Feature/
+  ./vendor/bin/phpunit tests/Unit/
+
+═══════════════════════════════════════════════════════════════════════════════
+🌍 VARIABLES D'ENVIRONNEMENT (.env)
+═══════════════════════════════════════════════════════════════════════════════
+
+APP_NAME=Medical Booking System
+APP_ENV=local
+APP_KEY=base64:...
+APP_DEBUG=true
+APP_URL=http://localhost:8000
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_DATABASE=medical_booking
+DB_USERNAME=root
+DB_PASSWORD=
+
+MAIL_MAILER=log
+MAIL_FROM_ADDRESS=noreply@medicalbooking.test
+
+═══════════════════════════════════════════════════════════════════════════════
+📚 FICHIERS DE DOCUMENTATION
+═══════════════════════════════════════════════════════════════════════════════
+
+START_HERE.txt               → Point de départ
+QUICK_START.txt              → 5 minutes
+BEGINNER_GUIDE.txt           → Guide débutants
+SETUP.md                     → Installation complète
+IMPORTANT_NOTES.txt          → Points clés
+IMPLEMENTATION_SUMMARY.txt   → Vue technique
+VERIFICATION_CHECKLIST.txt   → Checklist de test
+DOCUMENTATION_INDEX.txt      → Index complet
+PROJECT_STRUCTURE.txt        → Arborescence
+PROJECT_COMPLETION_REPORT.txt → Résumé final
+
+═══════════════════════════════════════════════════════════════════════════════
+🎓 RESSOURCES
+═══════════════════════════════════════════════════════════════════════════════
+
+Documentation Laravel:
+  https://laravel.com/docs/12
+
+Tailwind CSS:
+  https://tailwindcss.com/docs
+
+Communauté:
+  Discord: https://discord.gg/laravel
+  Stack Overflow: Tag [laravel]
+
+═══════════════════════════════════════════════════════════════════════════════
+✅ CHECKLIST PRE-PRODUCTION
+═══════════════════════════════════════════════════════════════════════════════
+
+□ Configurer APP_ENV=production
+□ Configurer APP_DEBUG=false
+□ Configurer la base de données de prod
+□ Configurer l'email (SMTP)
+□ Tester complètement l'application
+□ Exécuter les tests automatisés
+□ Sauvegarder la configuration
+□ Configurer HTTPS/SSL
+□ Mettre à jour les dépendances
+□ Planifier les backups
+
+═══════════════════════════════════════════════════════════════════════════════
+🎉 BON DÉVELOPPEMENT!
+═══════════════════════════════════════════════════════════════════════════════
+
+Besoin d'aide? Consultez les fichiers de documentation ou explorez le code!
+
+═══════════════════════════════════════════════════════════════════════════════

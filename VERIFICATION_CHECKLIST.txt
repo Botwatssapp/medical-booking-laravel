@@ -1,0 +1,291 @@
+═══════════════════════════════════════════════════════════════════════════════
+        CHECKLIST DE VÉRIFICATION POST-INSTALLATION
+═══════════════════════════════════════════════════════════════════════════════
+
+Utilisez cette checklist pour vérifier que tout fonctionne correctement après
+l'installation.
+
+═══════════════════════════════════════════════════════════════════════════════
+🔍 PHASE 1: VÉRIFICATION DE LA CONFIGURATION
+═══════════════════════════════════════════════════════════════════════════════
+
+□ Le fichier .env existe et est configuré
+□ APP_KEY est définie et non vide
+□ DB_DATABASE = medical_booking
+□ DB_USERNAME = root (ou votre utilisateur)
+□ DB_PASSWORD est configuré correctement
+
+Vérifier dans le terminal:
+  cat .env | grep APP_KEY
+  cat .env | grep DB_
+
+═══════════════════════════════════════════════════════════════════════════════
+🗄️  PHASE 2: VÉRIFICATION DE LA BASE DE DONNÉES
+═══════════════════════════════════════════════════════════════════════════════
+
+□ MySQL est lancé et accessible
+□ La base de données medical_booking existe
+□ Les 5 tables sont créées:
+  ✓ users
+  ✓ specialities
+  ✓ doctors
+  ✓ availabilities
+  ✓ appointments
+
+Vérifier dans MySQL:
+  SHOW DATABASES;
+  USE medical_booking;
+  SHOW TABLES;
+
+═══════════════════════════════════════════════════════════════════════════════
+📊 PHASE 3: VÉRIFICATION DES DONNÉES DE TEST
+═══════════════════════════════════════════════════════════════════════════════
+
+□ 1 utilisateur admin dans la table users
+□ 50 patients dans la table users
+□ 20 médecins dans la table doctors
+□ 8 spécialités dans la table specialities
+□ 500 disponibilités dans la table availabilities
+□ 200 rendez-vous dans la table appointments
+
+Vérifier dans MySQL:
+  SELECT COUNT(*) FROM users WHERE role = 'admin';
+  SELECT COUNT(*) FROM users WHERE role = 'patient';
+  SELECT COUNT(*) FROM doctors;
+  SELECT COUNT(*) FROM specialities;
+  SELECT COUNT(*) FROM availabilities;
+  SELECT COUNT(*) FROM appointments;
+
+Résultats attendus:
+  users (admin): 1
+  users (patient): 50
+  doctors: 20
+  specialities: 8
+  availabilities: 500
+  appointments: 200
+
+═══════════════════════════════════════════════════════════════════════════════
+🌐 PHASE 4: VÉRIFICATION DU SERVEUR WEB
+═══════════════════════════════════════════════════════════════════════════════
+
+□ Serveur Laravel lancé avec: php artisan serve
+□ Page d'accueil accessible sur http://localhost:8000
+□ Pas d'erreurs 500 ou 404
+
+Vérifier dans le navigateur:
+  http://localhost:8000
+
+Attendu: Page d'accueil avec boutons Login/Register
+
+═══════════════════════════════════════════════════════════════════════════════
+🔐 PHASE 5: VÉRIFICATION DE L'AUTHENTIFICATION
+═══════════════════════════════════════════════════════════════════════════════
+
+□ Page de login accessible: http://localhost:8000/login
+□ Page d'inscription accessible: http://localhost:8000/register
+□ Login admin réussit avec admin@gmail.com / password
+□ Redirection vers le dashboard après login
+
+Pour tester:
+  1. Allez à http://localhost:8000/login
+  2. Entrez: admin@gmail.com
+  3. Password: password
+  4. Cliquez Login
+  5. Vérifiez que vous êtes redirigé vers /admin/dashboard
+
+═══════════════════════════════════════════════════════════════════════════════
+👤 PHASE 6: VÉRIFICATION DU PANEL ADMIN
+═══════════════════════════════════════════════════════════════════════════════
+
+Une fois logué en tant qu'admin, vérifiez:
+
+□ Page d'accueil admin accessible: /admin/dashboard
+□ Les statistiques s'affichent correctement
+□ Menu de navigation visible
+
+Fonctionnalités à tester:
+
+Users:
+  □ /admin/users - Liste des utilisateurs
+  □ /admin/users/create - Créer un utilisateur
+  □ Éditer un utilisateur
+  □ Supprimer un utilisateur
+
+Doctors:
+  □ /admin/doctors - Liste des médecins
+  □ /admin/doctors/create - Créer un médecin
+  □ Éditer un médecin
+  □ Supprimer un médecin
+
+Specialties:
+  □ /admin/specialties - Liste des spécialités
+  □ /admin/specialties/create - Créer une spécialité
+  □ Éditer une spécialité
+  □ Supprimer une spécialité
+
+Appointments:
+  □ /admin/appointments - Liste tous les rendez-vous
+  □ Consulter les détails d'un rendez-vous
+
+═══════════════════════════════════════════════════════════════════════════════
+🏥 PHASE 7: VÉRIFICATION DU PANEL PATIENT
+═══════════════════════════════════════════════════════════════════════════════
+
+Logout et créer un compte patient, puis vérifiez:
+
+□ Page d'accueil patient accessible: /patient/dashboard
+□ Les statistiques personnelles s'affichent
+
+Fonctionnalités à tester:
+
+Doctors:
+  □ /patient/doctors - Consulter la liste des médecins
+  □ Chercher un médecin par nom
+  □ Filtrer par spécialité
+  □ Voir le profil d'un médecin
+
+Appointments:
+  □ /patient/appointments - Liste de mes rendez-vous
+  □ /patient/appointments/create - Réserver un rendez-vous
+  □ Sélectionner un médecin
+  □ Voir les disponibilités
+  □ Sélectionner une date et heure
+  □ Confirmer la réservation
+  □ Éditer un rendez-vous
+  □ Annuler un rendez-vous
+
+Profile:
+  □ /patient/profile/edit - Éditer le profil
+  □ Mettre à jour les informations
+
+═══════════════════════════════════════════════════════════════════════════════
+👨‍⚕️  PHASE 8: VÉRIFICATION DU PANEL MÉDECIN
+═══════════════════════════════════════════════════════════════════════════════
+
+Logout et se connecter avec un compte médecin, puis vérifiez:
+
+□ Page d'accueil médecin accessible: /doctor/dashboard
+□ Les statistiques du médecin s'affichent
+
+Fonctionnalités à tester:
+
+Availabilities:
+  □ /doctor/availabilities - Liste des disponibilités
+  □ /doctor/availabilities/create - Créer une disponibilité
+  □ Éditer une disponibilité
+  □ Supprimer une disponibilité
+
+Appointments:
+  □ /doctor/appointments - Liste des rendez-vous
+  □ Voir les détails d'un rendez-vous
+  □ Accepter un rendez-vous (pending → accepted)
+  □ Refuser un rendez-vous (pending → rejected)
+
+Profile:
+  □ /doctor/profile/edit - Éditer le profil
+  □ Mettre à jour les informations
+
+═══════════════════════════════════════════════════════════════════════════════
+🧪 PHASE 9: VÉRIFICATION DES VALIDATIONS
+═══════════════════════════════════════════════════════════════════════════════
+
+Testez les validations (attendu: messages d'erreur):
+
+□ Créer un utilisateur avec un email vide
+□ Créer un médecin avec un speciality_id invalide
+□ Réserver un rendez-vous avec une date passée
+□ Chercher un médecin avec un caractère spécial
+
+═══════════════════════════════════════════════════════════════════════════════
+📱 PHASE 10: VÉRIFICATION DE LA RESPONSIVITÉ
+═══════════════════════════════════════════════════════════════════════════════
+
+Testez sur différentes résolutions:
+
+□ Desktop (1920x1080): Tout s'affiche correctement
+□ Tablet (768x1024): Layout s'adapte
+□ Mobile (375x667): Responsive design fonctionne
+
+Outils:
+  • Ouvrir DevTools (F12)
+  • Utiliser le toggle "Device Toolbar"
+  • Tester les breakpoints
+
+═══════════════════════════════════════════════════════════════════════════════
+🔄 PHASE 11: VÉRIFICATION DES FLUX PRINCIPAUX
+═══════════════════════════════════════════════════════════════════════════════
+
+Flux Patient → Médecin:
+
+1. Patient se connecte
+2. Patient consulte la liste des médecins
+3. Patient sélectionne un médecin
+4. Patient consulte ses disponibilités
+5. Patient réserve un rendez-vous
+6. Rendez-vous créé avec status "pending"
+
+7. Médecin se connecte
+8. Médecin voit le rendez-vous en attente
+9. Médecin accepte ou refuse le rendez-vous
+10. Patient voit le changement de statut
+
+Attendu:
+  ✓ Rendez-vous créé
+  ✓ Status updated
+  ✓ Historique correct
+
+═══════════════════════════════════════════════════════════════════════════════
+🚀 PHASE 12: VÉRIFICATION DES ASSETS
+═══════════════════════════════════════════════════════════════════════════════
+
+□ CSS Tailwind charge correctement (pas de styling broken)
+□ Icônes Material Symbols affichent correctement
+□ Images chargent sans erreurs 404
+□ JavaScript réagit correctement (si des interactions)
+
+Vérifier:
+  • Ouvrir DevTools → Network
+  • Rafraîchir la page
+  • Vérifier qu'il n'y a pas de 404 ou 500
+  • Vérifier que la page est stylisée (pas de texte noir sur blanc)
+
+═══════════════════════════════════════════════════════════════════════════════
+📋 PHASE 13: VÉRIFICATION FINALE
+═══════════════════════════════════════════════════════════════════════════════
+
+□ Aucun erreur 500 dans les logs
+□ Aucun warning PHP dans les logs
+□ Pas de messages d'erreur non attendus
+□ Tous les formulaires valident correctement
+□ Les autorisations (middleware) fonctionnent
+
+Vérifier les logs:
+  tail -f storage/logs/laravel.log
+
+═══════════════════════════════════════════════════════════════════════════════
+✅ RÉSULTAT FINAL
+═══════════════════════════════════════════════════════════════════════════════
+
+Si toutes les coches sont cochées: 🎉 SUCCÈS!
+
+L'application est complètement opérationnelle et prête à l'emploi.
+
+Vous pouvez maintenant:
+  ✓ Déployer en production
+  ✓ Personnaliser l'application
+  ✓ Ajouter des fonctionnalités supplémentaires
+  ✓ Configurer l'email et les notifications
+
+═══════════════════════════════════════════════════════════════════════════════
+⚠️  RÉSOLUTION DE PROBLÈMES
+═══════════════════════════════════════════════════════════════════════════════
+
+Si certains éléments ne sont pas cochés:
+
+1. Consultez IMPORTANT_NOTES.txt
+2. Vérifiez les logs: storage/logs/laravel.log
+3. Vérifiez les erreurs console (DevTools F12)
+4. Relancez le serveur: php artisan serve
+5. Réinitialisez la BD: php artisan migrate:fresh --seed
+
+═══════════════════════════════════════════════════════════════════════════════

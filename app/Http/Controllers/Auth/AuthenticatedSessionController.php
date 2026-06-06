@@ -4,15 +4,22 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
+/**
+ * Gère l'authentification des utilisateurs (connexion / déconnexion).
+ *
+ * Après connexion, redirige vers le tableau de bord correspondant au rôle
+ * de l'utilisateur (admin, médecin ou patient).
+ */
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Display the login view.
+     * Affiche le formulaire de connexion.
      */
     public function create(): View
     {
@@ -20,7 +27,11 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Handle an incoming authentication request.
+     * Traite la requête d'authentification.
+     *
+     * Authentifie l'utilisateur, régénère la session pour prévenir
+     * la fixation de session, puis redirige vers le tableau de bord
+     * correspondant au rôle.
      */
     public function store(LoginRequest $request): RedirectResponse
     {
@@ -28,11 +39,14 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        /** @var User $user */
+        $user = Auth::user();
+
+        return redirect()->intended($this->dashboardRouteFor($user));
     }
 
     /**
-     * Destroy an authenticated session.
+     * Détruit la session authentifiée (déconnexion).
      */
     public function destroy(Request $request): RedirectResponse
     {
@@ -43,5 +57,17 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    /**
+     * Retourne l'URL du tableau de bord selon le rôle de l'utilisateur.
+     */
+    private function dashboardRouteFor(User $user): string
+    {
+        return match ($user->role) {
+            'admin'  => route('admin.dashboard',   absolute: false),
+            'doctor' => route('doctor.dashboard',  absolute: false),
+            default  => route('patient.dashboard', absolute: false),
+        };
     }
 }

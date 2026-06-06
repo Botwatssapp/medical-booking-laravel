@@ -3,61 +3,54 @@
 namespace Database\Seeders;
 
 use App\Models\Doctor;
+use App\Models\Speciality;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
+/**
+ * Seeder pour la table doctors.
+ *
+ * Crée 20 profils médecins en réutilisant les spécialités
+ * et les utilisateurs déjà présents en base (créés par SpecialitySeeder
+ * et UserSeeder) pour éviter les conflits d'unicité.
+ *
+ * Correction : au lieu de `Doctor::factory(20)->create()` qui crée
+ * 20 nouvelles Speciality (conflits avec SpecialitySeeder),
+ * on assigne des IDs existants via `speciality_id`.
+ *
+ * Note : les 5 médecins aux identifiants fixes (jean@doctor.com, etc.)
+ * créés dans UserSeeder n'ont pas encore de profil Doctor — ils peuvent
+ * être complétés via l'interface admin ou en ajoutant une boucle ici.
+ */
 class DoctorSeeder extends Seeder
 {
+    /**
+     * Peuple la table doctors en réutilisant les données existantes.
+     *
+     * @return void
+     */
     public function run(): void
     {
-        $doctors = [
-            [
-                'email'         => 'jean@doctor.com',
-                'speciality_id' => 1, // Cardiologie
-                'phone'         => '06 12 34 56 78',
-                'address'       => 'Hôpital Saint-Louis, Paris',
-                'bio'           => 'Cardiologue avec 15 ans d\'expérience spécialisé dans les maladies cardiovasculaires.',
-            ],
-            [
-                'email'         => 'sarah@doctor.com',
-                'speciality_id' => 2, // Dermatologie
-                'phone'         => '06 23 45 67 89',
-                'address'       => 'Clinique du Parc, Lyon',
-                'bio'           => 'Dermatologue experte en dermatologie esthétique et traitement des maladies de peau.',
-            ],
-            [
-                'email'         => 'thomas@doctor.com',
-                'speciality_id' => 6, // Médecine Générale
-                'phone'         => '06 34 56 78 90',
-                'address'       => 'Cabinet Médical, Marseille',
-                'bio'           => 'Médecin généraliste disponible pour toutes consultations médicales.',
-            ],
-            [
-                'email'         => 'leila@doctor.com',
-                'speciality_id' => 3, // Pédiatrie
-                'phone'         => '06 45 67 89 01',
-                'address'       => 'Centre de Santé, Bordeaux',
-                'bio'           => 'Pédiatre dédiée à la santé des enfants de 0 à 18 ans.',
-            ],
-            [
-                'email'         => 'pierre@doctor.com',
-                'speciality_id' => 5, // Orthopédie
-                'phone'         => '06 56 78 90 12',
-                'address'       => 'Hôpital Universitaire, Toulouse',
-                'bio'           => 'Chirurgien orthopédiste spécialisé dans les traumatismes sportifs.',
-            ],
-        ];
+        $specialityIds = Speciality::pluck('id');
+        $doctorUserIds = User::doctors()
+            ->doesntHave('doctor')
+            ->pluck('id');
 
-        foreach ($doctors as $data) {
-            $user = User::where('email', $data['email'])->first();
-            Doctor::create([
-                'user_id'       => $user->id,
-                'speciality_id' => $data['speciality_id'],
-                'phone'         => $data['phone'],
-                'address'       => $data['address'],
-                'bio'           => $data['bio'],
-                'is_available'  => true,
-            ]);
+        if ($specialityIds->isEmpty()) {
+            return;
+        }
+
+        // Crée 20 profils médecins en réutilisant les spécialités existantes.
+        // Les utilisateurs de rôle 'doctor' sans profil sont prioritaires ;
+        // si tous ont déjà un profil, la factory crée de nouveaux utilisateurs.
+        foreach (range(1, 20) as $i) {
+            $overrides = ['speciality_id' => $specialityIds->random()];
+
+            if ($doctorUserIds->isNotEmpty()) {
+                $overrides['user_id'] = $doctorUserIds->shift();
+            }
+
+            Doctor::factory()->create($overrides);
         }
     }
 }
