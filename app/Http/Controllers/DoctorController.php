@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\AppointmentConfirmed;
+use App\Mail\AppointmentRefused;
 use App\Models\Appointment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 class DoctorController extends Controller
 {
-    // Dashboard Médecin
     public function dashboard()
     {
         $appointments = Appointment::with('patient')
@@ -26,28 +28,34 @@ class DoctorController extends Controller
         return view('doctor.dashboard', compact('appointments', 'stats'));
     }
 
-    // Confirmer RDV
+    // ✅ Confirmer — صيفط email
     public function confirmAppointment(Appointment $appointment)
     {
         $appointment->update(['status' => 'confirmed']);
-        return back()->with('success', 'Rendez-vous confirmé');
+
+        Mail::to($appointment->patient->email)
+            ->send(new AppointmentConfirmed($appointment));
+
+        return back()->with('success', 'Rendez-vous confirmé — Email envoyé');
     }
 
-    // Refuser RDV
+    // ✅ Refuser — صيفط email
     public function refuseAppointment(Appointment $appointment)
     {
         $appointment->update(['status' => 'refused']);
-        return back()->with('success', 'Rendez-vous refusé');
+
+        Mail::to($appointment->patient->email)
+            ->send(new AppointmentRefused($appointment));
+
+        return back()->with('success', 'Rendez-vous refusé — Email envoyé');
     }
 
-    // Gérer disponibilités
     public function profile()
     {
         $doctor = Auth::user()->doctor;
         return view('doctor.profile', compact('doctor'));
     }
 
-    // Update profil
     public function updateProfile(Request $request)
     {
         $request->validate([

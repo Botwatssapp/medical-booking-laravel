@@ -34,7 +34,7 @@ class AdminController extends Controller
     // Liste Users
     public function users()
     {
-        $users = User::orderBy('created_at', 'desc')->get();
+        $users = User::orderBy('created_at', 'desc')->paginate(10);
         return view('admin.users', compact('users'));
     }
 
@@ -48,7 +48,8 @@ class AdminController extends Controller
     // Liste Médecins
     public function doctors()
     {
-        $doctors = Doctor::with('user', 'speciality')->get();
+        $doctors = Doctor::with('user', 'speciality')->paginate(10);
+
         return view('admin.doctors', compact('doctors'));
     }
 
@@ -116,10 +117,18 @@ class AdminController extends Controller
 
     // Tous les RDV
     public function appointments()
-    {
-        $appointments = Appointment::with('patient', 'doctor.user')
-            ->latest()
-            ->get();
-        return view('admin.appointments', compact('appointments'));
-    }
+{
+    $stats = [
+        'total'     => Appointment::count(),
+        'pending'   => Appointment::where('status', 'pending')->count(),
+        'confirmed' => Appointment::where('status', 'confirmed')->count(),
+        'cancelled' => Appointment::where('status', 'cancelled')->count(),
+    ];
+
+    $appointments = Appointment::with('patient', 'doctor.user')
+        ->latest()
+        ->paginate(10);
+
+    return view('admin.appointments', compact('appointments', 'stats'));
+}
 }
