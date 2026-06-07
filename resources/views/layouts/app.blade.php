@@ -15,7 +15,50 @@
             <a href="/" class="text-2xl font-bold text-[#003f87]">SantéConnect</a>
             <div class="flex items-center gap-4">
                 @auth
-                    <span class="text-sm text-[#526069]">{{ Auth::user()->name }}</span>
+                    {{-- Cloche de notifications (patients uniquement) --}}
+                    @if(Auth::user()->isPatient())
+                        @php $unreadCount = Auth::user()->unreadNotifications()->count(); @endphp
+                        <a href="{{ route('patient.notifications.index') }}"
+                           class="relative w-10 h-10 flex items-center justify-center rounded-xl border border-[#c2c6d4] text-[#526069] hover:bg-[#eff4ff] hover:text-[#003f87] transition-colors"
+                           title="Notifications">
+                            <span class="material-symbols-outlined text-xl">notifications</span>
+                            @if($unreadCount > 0)
+                                <span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1
+                                             bg-red-500 text-white text-[10px] font-bold rounded-full
+                                             flex items-center justify-center leading-none">
+                                    {{ $unreadCount > 9 ? '9+' : $unreadCount }}
+                                </span>
+                            @endif
+                        </a>
+                    @endif
+
+                    {{-- Avatar + nom cliquable vers le profil --}}
+                    @php
+                        $profileRoute = match(Auth::user()->role) {
+                            'patient' => 'patient.profile.edit',
+                            'doctor'  => 'doctor.profile.edit',
+                            'admin'   => 'admin.profile.edit',
+                            default   => null,
+                        };
+                    @endphp
+                    <a href="{{ $profileRoute ? route($profileRoute) : '#' }}"
+                       class="flex items-center gap-2 group">
+                        <div class="w-9 h-9 rounded-full overflow-hidden border-2 border-[#c2c6d4] group-hover:border-[#003f87] transition-colors shrink-0">
+                            @if(Auth::user()->profile_image_url)
+                                <img src="{{ Auth::user()->profile_image_url }}"
+                                     alt="{{ Auth::user()->name }}"
+                                     class="w-full h-full object-cover">
+                            @else
+                                <div class="w-full h-full bg-[#003f87] flex items-center justify-center text-white text-sm font-bold">
+                                    {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                                </div>
+                            @endif
+                        </div>
+                        <span class="text-sm text-[#526069] group-hover:text-[#003f87] transition-colors">
+                            {{ Auth::user()->name }}
+                        </span>
+                    </a>
+
                     <form action="/logout" method="POST" class="inline">
                         @csrf
                         <button class="px-4 py-2 bg-[#003f87] text-white rounded-lg text-sm hover:opacity-90">

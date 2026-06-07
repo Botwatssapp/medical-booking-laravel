@@ -4,45 +4,44 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
+use App\Models\Availability;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
-/**
- * Contrôleur de consultation des rendez-vous côté administrateur.
- *
- * L'administrateur dispose d'une vue en lecture seule sur tous les rendez-vous
- * du système, avec les informations patient et médecin associées.
- */
 class AppointmentController extends Controller
 {
-    /**
-     * Affiche la liste paginée de tous les rendez-vous du système.
-     *
-     * Utilise l'eager loading pour patient, doctor et speciality
-     * afin d'éviter les requêtes N+1.
-     *
-     * @return View
-     */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $appointments = Appointment::with([
+        $query = Appointment::with([
             'patient',
             'doctor.user',
             'doctor.speciality',
-        ])
-        ->orderBy('appointment_date', 'desc')
-        ->paginate(15);
+        ]);
 
-        return view('admin.appointments.index', compact('appointments'));
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('patient', fn($q) => $q->where('name', 'like', "%$search%"))
+                  ->orWhereHas('doctor.user', fn($q) => $q->where('name', 'like', "%$search%"));
+        }
+
+        $appointments = $query->orderBy('appointment_date', 'desc')->paginate(15)->withQueryString();
+
+        $stats = [
+            'total'     => Appointment::count(),
+            'pending'   => Appointment::pending()->count(),
+            'accepted'  => Appointment::accepted()->count(),
+            'cancelled' => Appointment::cancelled()->count(),
+        ];
+
+        return view('admin.appointments.index', compact('appointments', 'stats'));
     }
 
-    /**
-     * Affiche le détail d'un rendez-vous spécifique.
-     *
-     * Charge toutes les relations nécessaires à l'affichage complet.
-     *
-     * @param  Appointment $appointment
-     * @return View
-     */
     public function show(Appointment $appointment): View
     {
         $appointment->load([
@@ -53,5 +52,52 @@ class AppointmentController extends Controller
         ]);
 
         return view('admin.appointments.show', compact('appointment'));
+    }
+
+    public function cancel(Request $request, Appointment $appointment): RedirectResponse
+    {
+        if (in_array($appointment->status, ['cancelled', 'completed', 'missed'])) {
+            return back()->with('error', 'Ce rendez-vous ne peut pas être annulé.');
+        }
+
+        DB::transaction(function () use ($appointment) {
+            if ($appointment->availability) {
+                $appointment->availability->update(['is_available' => true]);
+            }
+            $appointment->update(['status' => 'cancelled']);
+        });
+
+        return back()->with('success', 'Rendez-vous annulé avec succès.');
+    }
+
+    public function updateStatus(Request $request, Appointment $appointment): RedirectResponse
+    {
+        $request->validate([
+            'status' => ['required', 'in:pending,accepted,rejected,cancelled,completed,missed'],
+        ]);
+
+        $newStatus = $request->status;
+
+        DB::transaction(function () use ($appointment, $newStatus) {
+            $oldStatus = $appointment->status;
+
+            // If we're cancelling or rejecting, free the slot
+            if (in_array($newStatus, ['cancelled', 'rejected']) && !in_array($oldStatus, ['cancelled', 'rejected'])) {
+                if ($appointment->availability) {
+                    $appointment->availability->update(['is_available' => true]);
+                }
+            }
+
+            // If we're reactivating from cancelled/rejected, re-lock the slot
+            if (!in_array($newStatus, ['cancelled', 'rejected']) && in_array($oldStatus, ['cancelled', 'rejected'])) {
+                if ($appointment->availability) {
+                    $appointment->availability->update(['is_available' => false]);
+                }
+            }
+
+            $appointment->update(['status' => $newStatus]);
+        });
+
+        return back()->with('success', 'Statut mis à jour avec succès.');
     }
 }

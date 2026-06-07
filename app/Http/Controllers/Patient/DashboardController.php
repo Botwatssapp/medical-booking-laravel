@@ -40,7 +40,7 @@ class DashboardController extends Controller
         $upcomingAppointments = Appointment::where('patient_id', $patientId)
             ->accepted()
             ->upcoming()
-            ->with(['doctor.user', 'doctor.speciality'])
+            ->with(['doctor.user', 'doctor.speciality', 'availability'])
             ->orderBy('appointment_date')
             ->limit(5)
             ->get();
@@ -49,7 +49,7 @@ class DashboardController extends Controller
         $pastAppointments = Appointment::where('patient_id', $patientId)
             ->completed()
             ->past()
-            ->with(['doctor.user', 'doctor.speciality'])
+            ->with(['doctor.user', 'doctor.speciality', 'availability'])
             ->orderBy('appointment_date', 'desc')
             ->limit(5)
             ->get();

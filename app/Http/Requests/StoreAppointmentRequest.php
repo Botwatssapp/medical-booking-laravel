@@ -29,6 +29,11 @@ class StoreAppointmentRequest extends FormRequest
     /**
      * Règles de validation avec vérifications des règles métier.
      *
+     * `appointment_date` n'est PAS validé ici : il est dérivé côté serveur
+     * dans `AppointmentController::store()` à partir de la disponibilité
+     * (availability.date + availability.start_time). Cela évite toute
+     * manipulation côté client et garantit la cohérence des données.
+     *
      * @return array<string, mixed>
      */
     public function rules(): array
@@ -40,17 +45,13 @@ class StoreAppointmentRequest extends FormRequest
             ],
             'availability_id' => [
                 'required',
-                // Le créneau doit exister et être disponible
+                // Le créneau doit exister, être disponible, être futur
+                // et appartenir au médecin sélectionné
                 Rule::exists('availabilities', 'id')->where(function ($query) {
                     $query->where('is_available', true)
                           ->where('date', '>=', now()->toDateString())
                           ->where('doctor_id', $this->input('doctor_id'));
                 }),
-            ],
-            'appointment_date' => [
-                'required',
-                'date',
-                'after:now',
             ],
             'notes' => [
                 'nullable',
@@ -68,13 +69,10 @@ class StoreAppointmentRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'doctor_id.required'          => 'Le médecin est obligatoire.',
-            'doctor_id.exists'            => 'Le médecin sélectionné n\'existe pas.',
-            'availability_id.required'    => 'Veuillez sélectionner un créneau horaire.',
-            'availability_id.exists'      => 'Ce créneau n\'est pas disponible ou n\'appartient pas au médecin sélectionné.',
-            'appointment_date.required'   => 'La date du rendez-vous est obligatoire.',
-            'appointment_date.date'       => 'La date doit être valide.',
-            'appointment_date.after'      => 'La date doit être dans le futur.',
+            'doctor_id.required'       => 'Le médecin est obligatoire.',
+            'doctor_id.exists'         => 'Le médecin sélectionné n\'existe pas.',
+            'availability_id.required' => 'Veuillez sélectionner un créneau horaire.',
+            'availability_id.exists'   => 'Ce créneau n\'est plus disponible ou n\'appartient pas au médecin sélectionné.',
         ];
     }
 }

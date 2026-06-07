@@ -1,45 +1,25 @@
-@extends('layouts.app')
-@section('title', 'Mon profil')
+@extends('layouts.admin')
+@section('page-title', 'Mon profil')
+@section('page-subtitle', 'Gérer les informations de votre compte administrateur')
 
-@section('content')
-<div class="max-w-2xl mx-auto px-8 py-10">
-
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-[#0d1c2f]">Mon profil</h1>
-        <p class="text-[#526069] mt-1">Modifiez vos informations personnelles.</p>
-    </div>
-
-    @if(session('success'))
-        <div class="flex items-center gap-3 bg-green-50 border border-green-200 text-green-800 rounded-xl px-5 py-4 mb-6">
-            <span class="material-symbols-outlined text-green-600">check_circle</span>
-            <span>{{ session('success') }}</span>
-        </div>
-    @endif
-
-    @if($errors->any())
-        <div class="bg-red-50 border border-red-200 rounded-xl px-5 py-4 mb-6">
-            <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
-                @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
-            </ul>
-        </div>
-    @endif
+@section('admin-content')
+<div class="max-w-2xl space-y-6">
 
     {{-- Formulaire suppression photo — hors du formulaire principal --}}
     @if($user->profile_image)
-        <form id="remove-image-form" method="POST" action="{{ route('patient.profile.removeImage') }}" class="hidden">
+        <form id="remove-image-form" method="POST" action="{{ route('admin.profile.removeImage') }}" class="hidden">
             @csrf @method('DELETE')
         </form>
     @endif
 
-    <form method="POST" action="{{ route('patient.profile.update') }}"
+    {{-- ── Photo + infos principales ── --}}
+    <form method="POST" action="{{ route('admin.profile.update') }}"
           enctype="multipart/form-data"
-          class="bg-white rounded-2xl border border-[#c2c6d4]/30 shadow-sm p-8 space-y-6">
-        @csrf
-        @method('PATCH')
+          class="bg-white rounded-2xl border border-[#e0e7ff] p-8 space-y-6">
+        @csrf @method('PATCH')
 
-        {{-- ── Photo de profil ── --}}
+        {{-- Photo de profil --}}
         <div class="flex flex-col items-center gap-4">
-
             <div class="relative">
                 <div class="w-28 h-28 rounded-full border-4 border-[#003f87]/20 overflow-hidden bg-[#eff4ff] flex items-center justify-center">
                     @if($user->profile_image_url)
@@ -52,7 +32,6 @@
                         <img id="avatar-preview" src="" alt="" class="w-full h-full object-cover hidden">
                     @endif
                 </div>
-
                 <label for="profile_image"
                        class="absolute bottom-0 right-0 w-9 h-9 bg-[#003f87] hover:bg-[#002d6b] text-white rounded-full flex items-center justify-center cursor-pointer shadow-md transition-colors"
                        title="Changer la photo">
@@ -75,8 +54,9 @@
             </div>
         </div>
 
-        <hr class="border-[#c2c6d4]/40">
+        <hr class="border-[#e0e7ff]">
 
+        {{-- Nom & email --}}
         <div class="space-y-4">
             <div>
                 <label for="name" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">
@@ -99,11 +79,44 @@
             </div>
         </div>
 
+        <hr class="border-[#e0e7ff]">
+
+        {{-- Changement de mot de passe --}}
+        <div>
+            <p class="text-sm font-bold text-[#0d1c2f] mb-3">Changer le mot de passe</p>
+            <p class="text-xs text-[#526069] mb-4">Laissez vide si vous ne souhaitez pas changer le mot de passe.</p>
+            <div class="space-y-4">
+                <div>
+                    <label for="current_password" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">Mot de passe actuel</label>
+                    <input type="password" id="current_password" name="current_password"
+                           class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3 text-[#0d1c2f]
+                                  focus:outline-none focus:ring-2 focus:ring-[#003f87]/30 focus:border-[#003f87] transition-colors">
+                    @error('current_password')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="password" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">Nouveau mot de passe</label>
+                        <input type="password" id="password" name="password"
+                               class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3 text-[#0d1c2f]
+                                      focus:outline-none focus:ring-2 focus:ring-[#003f87]/30 focus:border-[#003f87] transition-colors">
+                        @error('password')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label for="password_confirmation" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">Confirmer</label>
+                        <input type="password" id="password_confirmation" name="password_confirmation"
+                               class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3 text-[#0d1c2f]
+                                      focus:outline-none focus:ring-2 focus:ring-[#003f87]/30 focus:border-[#003f87] transition-colors">
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <button type="submit"
-            class="w-full py-3 bg-[#003f87] hover:opacity-90 text-white font-semibold rounded-xl transition-opacity">
+                class="w-full py-3 bg-[#003f87] hover:opacity-90 text-white font-semibold rounded-xl transition-opacity">
             Enregistrer les modifications
         </button>
     </form>
+
 </div>
 
 <script>

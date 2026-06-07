@@ -1,129 +1,243 @@
 @extends('layouts.app')
-@section('title', 'Dashboard Patient')
+@section('title', 'Mon espace santé')
 
 @section('content')
-<div class="max-w-[1440px] mx-auto px-8 py-10">
+<div class="max-w-[1200px] mx-auto px-8 py-10">
 
-    {{-- Header --}}
-    <div class="flex justify-between items-center mb-10">
+    {{-- ── Header ── --}}
+    <div class="flex items-center justify-between mb-8">
         <div>
-            <h1 class="text-3xl font-bold text-[#0d1c2f]">Bonjour, {{ Auth::user()->name }}</h1>
-            <p class="text-[#424752]">Voici le récapitulatif de votre santé aujourd'hui.</p>
+            <h1 class="text-3xl font-bold text-[#0d1c2f]">Bonjour, {{ Auth::user()->name }} 👋</h1>
+            <p class="text-[#526069] mt-1">{{ now()->isoFormat('dddd D MMMM Y') }}</p>
         </div>
-        <a href="/patient/doctors" class="flex items-center gap-2 px-6 py-3 bg-[#003f87] text-white rounded-xl font-medium hover:opacity-90 transition-all">
-            <span class="material-symbols-outlined">add</span>
-            Prendre RDV
+        <a href="{{ route('patient.doctors.index') }}"
+           class="flex items-center gap-2 px-5 py-2.5 bg-[#003f87] text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity">
+            <span class="material-symbols-outlined text-[18px]">add</span>
+            Prendre un RDV
         </a>
     </div>
 
     <div class="grid grid-cols-12 gap-6">
 
-        {{-- Profile Card --}}
-        <div class="col-span-12 lg:col-span-4 space-y-6">
-            <div class="bg-white rounded-xl p-8 border border-[#c2c6d4]/30 shadow-sm">
-                <div class="flex flex-col items-center text-center mb-8">
-                    <div class="w-24 h-24 rounded-full bg-[#0056b3] text-white flex items-center justify-center text-4xl font-bold mb-4">
-                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+        {{-- ── Colonne gauche : profil + stats ── --}}
+        <div class="col-span-12 lg:col-span-4 space-y-5">
+
+            {{-- Carte profil --}}
+            <div class="bg-white rounded-2xl border border-[#e0e7ff] shadow-sm p-6">
+                <div class="flex flex-col items-center text-center mb-6">
+                    <div class="w-20 h-20 rounded-full overflow-hidden border-4 border-[#003f87]/10 mb-3">
+                        @if(Auth::user()->profile_image_url)
+                            <img src="{{ Auth::user()->profile_image_url }}"
+                                 alt="{{ Auth::user()->name }}"
+                                 class="w-full h-full object-cover">
+                        @else
+                            <div class="w-full h-full bg-[#003f87] flex items-center justify-center text-white text-2xl font-bold">
+                                {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                            </div>
+                        @endif
                     </div>
-                    <h2 class="text-xl font-semibold text-[#0d1c2f]">{{ Auth::user()->name }}</h2>
-                    <span class="text-xs bg-[#e6eeff] text-[#003f87] px-3 py-1 rounded-full mt-2">Patient</span>
+                    <p class="font-bold text-[#0d1c2f] text-lg">{{ Auth::user()->name }}</p>
+                    <p class="text-xs text-[#526069]">{{ Auth::user()->email }}</p>
+                    <a href="{{ route('patient.profile.edit') }}"
+                       class="mt-3 text-xs font-semibold text-[#003f87] hover:underline">
+                        Modifier le profil →
+                    </a>
                 </div>
-                <div class="border-t border-[#c2c6d4] pt-6 space-y-3">
-                    <div class="flex justify-between">
-                        <span class="text-sm text-[#424752]">Email</span>
-                        <span class="text-sm font-medium text-[#0d1c2f]">{{ Auth::user()->email }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-sm text-[#424752]">Total RDV</span>
-                        <span class="text-sm font-medium text-[#0d1c2f]">{{ $appointments->count() }}</span>
-                    </div>
+
+                {{-- Stats --}}
+                <div class="space-y-3 border-t border-[#e0e7ff] pt-4">
+                    @foreach([
+                        ['label' => 'Total rendez-vous', 'value' => $totalAppointments,     'color' => 'text-[#0d1c2f]'],
+                        ['label' => 'Confirmés',         'value' => $confirmedAppointments,  'color' => 'text-green-600'],
+                        ['label' => 'En attente',        'value' => $pendingAppointments,    'color' => 'text-yellow-600'],
+                        ['label' => 'Annulés',           'value' => $cancelledAppointments,  'color' => 'text-red-500'],
+                    ] as $stat)
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-[#526069]">{{ $stat['label'] }}</span>
+                            <span class="font-bold text-sm {{ $stat['color'] }}">{{ $stat['value'] }}</span>
+                        </div>
+                    @endforeach
                 </div>
             </div>
 
-            {{-- Next Exam Widget --}}
-            <div class="bg-[#0056b3] text-white rounded-xl p-6 shadow-md relative overflow-hidden">
+            {{-- Prochain RDV --}}
+            <div class="bg-[#003f87] text-white rounded-2xl p-6 relative overflow-hidden shadow-sm">
                 <div class="relative z-10">
-                    <h3 class="text-sm opacity-80">Prochain RDV</h3>
-                    @if($appointments->where('status', 'confirmed')->first())
-                        <p class="text-xl font-semibold mt-2">
-                            {{ $appointments->where('status', 'confirmed')->first()->date }}
+                    <p class="text-xs font-bold uppercase tracking-wider opacity-70 mb-2">Prochain rendez-vous</p>
+                    @if($upcomingAppointments->isNotEmpty())
+                        @php $next = $upcomingAppointments->first(); @endphp
+                        <p class="text-2xl font-bold">{{ $next->appointment_date->format('d/m/Y') }}</p>
+                        <p class="text-sm opacity-80 mt-1">
+                            @if($next->availability)
+                                {{ substr($next->availability->start_time, 0, 5) }} ·
+                            @endif
+                            Dr. {{ $next->doctor->user->name }}
                         </p>
-                        <p class="text-sm opacity-90">
-                            {{ $appointments->where('status', 'confirmed')->first()->time_slot }}
-                        </p>
+                        <span class="inline-block mt-2 px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-semibold">
+                            {{ $next->doctor->speciality->name }}
+                        </span>
                     @else
-                        <p class="text-xl font-semibold mt-2">Aucun RDV confirmé</p>
+                        <p class="text-xl font-bold">Aucun RDV à venir</p>
+                        <a href="{{ route('patient.doctors.index') }}"
+                           class="inline-block mt-2 text-xs font-semibold opacity-80 hover:opacity-100 underline underline-offset-2">
+                            Prendre rendez-vous →
+                        </a>
                     @endif
                 </div>
                 <span class="material-symbols-outlined absolute -right-4 -bottom-4 text-[120px] opacity-10">medical_services</span>
             </div>
+
+            {{-- Liens rapides --}}
+            <div class="bg-white rounded-2xl border border-[#e0e7ff] shadow-sm p-5 space-y-2">
+                <p class="text-xs font-bold text-[#526069] uppercase tracking-wider mb-3">Navigation rapide</p>
+                <a href="{{ route('patient.appointments.index') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#f8faff] transition-colors group">
+                    <span class="material-symbols-outlined text-[#003f87] text-[20px]">calendar_month</span>
+                    <span class="text-sm font-medium text-[#0d1c2f] group-hover:text-[#003f87]">Mes rendez-vous</span>
+                    <span class="material-symbols-outlined text-[#c2c6d4] text-[16px] ml-auto">chevron_right</span>
+                </a>
+                <a href="{{ route('patient.doctors.index') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#f8faff] transition-colors group">
+                    <span class="material-symbols-outlined text-[#003f87] text-[20px]">stethoscope</span>
+                    <span class="text-sm font-medium text-[#0d1c2f] group-hover:text-[#003f87]">Trouver un médecin</span>
+                    <span class="material-symbols-outlined text-[#c2c6d4] text-[16px] ml-auto">chevron_right</span>
+                </a>
+                <a href="{{ route('patient.notifications.index') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#f8faff] transition-colors group">
+                    <span class="material-symbols-outlined text-[#003f87] text-[20px]">notifications</span>
+                    <span class="text-sm font-medium text-[#0d1c2f] group-hover:text-[#003f87]">Notifications</span>
+                    @php $unread = Auth::user()->unreadNotifications()->count(); @endphp
+                    @if($unread > 0)
+                        <span class="ml-auto min-w-[20px] h-5 px-1 bg-red-500 text-white text-[11px] font-bold rounded-full flex items-center justify-center">
+                            {{ $unread }}
+                        </span>
+                    @else
+                        <span class="material-symbols-outlined text-[#c2c6d4] text-[16px] ml-auto">chevron_right</span>
+                    @endif
+                </a>
+            </div>
         </div>
 
-        {{-- Appointments --}}
-        <div class="col-span-12 lg:col-span-8 space-y-6">
-            <div class="flex justify-between items-center">
-                <h2 class="text-xl font-semibold text-[#0d1c2f]">Prochains Rendez-vous</h2>
-                <a href="/patient/appointments" class="text-sm text-[#003f87] hover:underline">Voir tout l'historique</a>
-            </div>
+        {{-- ── Colonne droite : rendez-vous ── --}}
+        <div class="col-span-12 lg:col-span-8 space-y-5">
 
-            @forelse($appointments->take(5) as $apt)
-                <div class="bg-white rounded-xl p-6 border border-[#c2c6d4]/30 shadow-sm flex flex-col md:flex-row md:items-center gap-6">
-                    <div class="w-16 h-16 bg-[#eff4ff] rounded-xl flex flex-col items-center justify-center text-[#003f87]">
-                        <span class="text-xs font-semibold">{{ strtoupper(date('M', strtotime($apt->date))) }}</span>
-                        <span class="text-2xl font-semibold">{{ date('d', strtotime($apt->date)) }}</span>
-                    </div>
-                    <div class="flex-1">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="text-sm font-bold text-[#0d1c2f]">
-                                Dr. {{ $apt->doctor->user->name }}
-                            </span>
-                            <span class="px-2 py-0.5 rounded-full text-[11px] font-bold
-                                @if($apt->status === 'confirmed') bg-green-100 text-green-700
-                                @elseif($apt->status === 'pending') bg-yellow-100 text-yellow-700
-                                @elseif($apt->status === 'cancelled') bg-red-100 text-red-700
-                                @else bg-gray-100 text-gray-700 @endif">
-                                {{ ucfirst($apt->status) }}
-                            </span>
+            {{-- Prochains RDV confirmés --}}
+            <div class="bg-white rounded-2xl border border-[#e0e7ff] shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-[#e0e7ff] flex items-center justify-between">
+                    <h2 class="font-bold text-[#0d1c2f] flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#003f87]">upcoming</span>
+                        Prochains rendez-vous
+                    </h2>
+                    <a href="{{ route('patient.appointments.index') }}"
+                       class="text-xs font-semibold text-[#003f87] hover:underline">
+                        Voir tout →
+                    </a>
+                </div>
+
+                <div class="divide-y divide-[#f0f4ff]">
+                    @forelse($upcomingAppointments as $apt)
+                        @php
+                            $mois = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+                        @endphp
+                        <div class="flex items-center gap-4 px-6 py-4 hover:bg-[#f8faff] transition-colors">
+                            <div class="w-14 h-14 bg-[#eff4ff] rounded-xl flex flex-col items-center justify-center text-[#003f87] shrink-0">
+                                <span class="text-[10px] font-bold uppercase">{{ $mois[$apt->appointment_date->month - 1] }}</span>
+                                <span class="text-xl font-bold leading-tight">{{ $apt->appointment_date->format('d') }}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <p class="font-semibold text-[#0d1c2f] text-sm">Dr. {{ $apt->doctor->user->name }}</p>
+                                    <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-green-100 text-green-800">Confirmé</span>
+                                </div>
+                                <p class="text-xs text-[#526069] mt-0.5">
+                                    {{ $apt->doctor->speciality->name }}
+                                    @if($apt->availability)
+                                        · {{ substr($apt->availability->start_time, 0, 5) }} – {{ substr($apt->availability->end_time, 0, 5) }}
+                                    @endif
+                                </p>
+                            </div>
+                            <a href="{{ route('patient.doctors.show', $apt->doctor) }}"
+                               class="text-xs font-semibold text-[#003f87] hover:underline shrink-0">
+                                Voir →
+                            </a>
                         </div>
-                        <p class="text-sm text-[#424752]">
-                            {{ $apt->doctor->speciality->name }} — {{ $apt->time_slot }}
-                        </p>
-                        @if($apt->reason)
-                            <p class="text-xs text-[#526069] mt-1">{{ $apt->reason }}</p>
-                        @endif
-                    </div>
-                    @if($apt->status === 'pending')
-                        <form action="/patient/appointments/{{ $apt->id }}" method="POST">
-                            @csrf
-                            @method('DELETE')
-                            <button class="px-4 py-2 border border-[#ba1a1a] text-[#ba1a1a] rounded-lg text-sm hover:bg-[#ffdad6] transition-colors">
-                                Annuler
-                            </button>
-                        </form>
-                    @endif
+                    @empty
+                        <div class="px-6 py-10 text-center">
+                            <span class="material-symbols-outlined text-4xl text-[#c2c6d4] block mb-2">event_available</span>
+                            <p class="text-sm text-[#526069]">Aucun rendez-vous confirmé à venir.</p>
+                            <a href="{{ route('patient.doctors.index') }}"
+                               class="inline-block mt-2 text-sm font-semibold text-[#003f87] hover:underline">
+                                Prendre un rendez-vous →
+                            </a>
+                        </div>
+                    @endforelse
                 </div>
-            @empty
-                <div class="bg-white rounded-xl p-8 border border-[#c2c6d4]/30 shadow-sm text-center text-[#424752]">
-                    Aucun rendez-vous —
-                    <a href="/patient/doctors" class="text-[#003f87] hover:underline">Prendre un RDV</a>
-                </div>
-            @endforelse
-
-            {{-- Quick Actions --}}
-            <div class="grid grid-cols-2 gap-6 pt-4">
-                @foreach([
-                    ['icon' => 'prescriptions', 'title' => 'Mes Ordonnances', 'desc' => 'Accédez à vos prescriptions numériques.'],
-                    ['icon' => 'lab_panel', 'title' => "Résultats d'Analyses", 'desc' => 'Consultez vos derniers rapports de laboratoire.'],
-                ] as $card)
-                <div class="bg-white p-6 rounded-xl border border-[#c2c6d4]/30 shadow-sm hover:border-[#003f87] transition-all cursor-pointer group">
-                    <div class="w-12 h-12 rounded-full bg-[#eff4ff] flex items-center justify-center text-[#003f87] mb-4 group-hover:bg-[#003f87] group-hover:text-white transition-colors">
-                        <span class="material-symbols-outlined">{{ $card['icon'] }}</span>
-                    </div>
-                    <h3 class="text-sm font-bold text-[#0d1c2f]">{{ $card['title'] }}</h3>
-                    <p class="text-sm text-[#424752] mt-1">{{ $card['desc'] }}</p>
-                </div>
-                @endforeach
             </div>
+
+            {{-- En attente de confirmation --}}
+            @if($pendingAppointments > 0)
+                @php
+                    $pendingList = auth()->user()->appointments()->pending()->with(['doctor.user','doctor.speciality','availability'])->orderBy('appointment_date')->limit(3)->get();
+                @endphp
+                <div class="bg-yellow-50 border border-yellow-200 rounded-2xl overflow-hidden">
+                    <div class="px-6 py-4 border-b border-yellow-200 flex items-center gap-3">
+                        <span class="material-symbols-outlined text-yellow-600">pending</span>
+                        <h2 class="font-bold text-yellow-900">{{ $pendingAppointments }} demande{{ $pendingAppointments > 1 ? 's' : '' }} en attente de confirmation</h2>
+                    </div>
+                    <div class="divide-y divide-yellow-100">
+                        @foreach($pendingList as $apt)
+                            @php $mois = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']; @endphp
+                            <div class="flex items-center gap-4 px-6 py-3">
+                                <div class="w-12 h-12 bg-white/60 rounded-xl flex flex-col items-center justify-center text-yellow-700 shrink-0">
+                                    <span class="text-[10px] font-bold uppercase">{{ $mois[$apt->appointment_date->month - 1] }}</span>
+                                    <span class="text-lg font-bold leading-tight">{{ $apt->appointment_date->format('d') }}</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-semibold text-yellow-900">Dr. {{ $apt->doctor->user->name }}</p>
+                                    <p class="text-xs text-yellow-700">{{ $apt->doctor->speciality->name }}</p>
+                                </div>
+                                <form method="POST" action="{{ route('patient.appointments.destroy', $apt) }}" class="inline"
+                                      onsubmit="return confirm('Annuler cette demande ?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit"
+                                        class="text-xs font-semibold text-red-600 hover:underline">
+                                        Annuler
+                                    </button>
+                                </form>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            {{-- Historique récent --}}
+            @if($pastAppointments->isNotEmpty())
+                <div class="bg-white rounded-2xl border border-[#e0e7ff] shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-[#e0e7ff]">
+                        <h2 class="font-bold text-[#0d1c2f] flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[#003f87]">history</span>
+                            Consultations récentes
+                        </h2>
+                    </div>
+                    <div class="divide-y divide-[#f0f4ff]">
+                        @foreach($pastAppointments as $apt)
+                            @php $mois = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']; @endphp
+                            <div class="flex items-center gap-4 px-6 py-3 opacity-80">
+                                <div class="w-12 h-12 bg-[#f0f4ff] rounded-xl flex flex-col items-center justify-center text-[#526069] shrink-0">
+                                    <span class="text-[10px] font-bold uppercase">{{ $mois[$apt->appointment_date->month - 1] }}</span>
+                                    <span class="text-lg font-bold leading-tight">{{ $apt->appointment_date->format('d') }}</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-semibold text-[#0d1c2f]">Dr. {{ $apt->doctor->user->name }}</p>
+                                    <p class="text-xs text-[#526069]">{{ $apt->doctor->speciality->name }}</p>
+                                </div>
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800">Terminé</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
         </div>
     </div>
 </div>

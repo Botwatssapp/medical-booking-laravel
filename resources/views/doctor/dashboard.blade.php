@@ -1,96 +1,166 @@
-@extends('layouts.app')
-@section('title', 'Dashboard Médecin')
+@extends('layouts.doctor')
+@section('page-title', 'Tableau de bord')
+@section('page-subtitle', now()->format('l d F Y'))
 
-@section('content')
-<div class="max-w-[1440px] mx-auto px-8 py-10">
+@section('page-actions')
+    <a href="{{ route('doctor.availabilities.create') }}"
+       class="flex items-center gap-2 px-4 py-2.5 bg-[#003f87] text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity">
+        <span class="material-symbols-outlined text-[18px]">add</span>
+        Ajouter des créneaux
+    </a>
+@endsection
 
-    {{-- Header --}}
-    <div class="flex justify-between items-center mb-10">
-        <div>
-            <h1 class="text-3xl font-bold text-[#0d1c2f]">Bonjour, Dr. {{ Auth::user()->name }}</h1>
-            <p class="text-[#424752]">Voici l'aperçu de votre journée.</p>
+@section('doctor-content')
+<div class="space-y-6">
+
+    {{-- Profil non encore configuré --}}
+    @if($profileIncomplete)
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-10 text-center">
+            <span class="material-symbols-outlined text-6xl text-amber-400 block mb-4">pending</span>
+            <h2 class="text-xl font-bold text-amber-800 mb-2">Profil en attente de validation</h2>
+            <p class="text-amber-700 text-sm max-w-md mx-auto">
+                Votre compte médecin a été créé. Un administrateur doit compléter votre profil
+                médical avant que vous puissiez recevoir des rendez-vous.
+            </p>
         </div>
-        <a href="/doctor/profile" class="flex items-center gap-2 px-6 py-3 bg-white border border-[#c2c6d4] text-[#003f87] rounded-xl font-medium hover:bg-[#eff4ff] transition-all">
-            <span class="material-symbols-outlined">manage_accounts</span>
-            Mon Profil
-        </a>
-    </div>
+    @else
 
-    {{-- Stats --}}
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        @foreach([
-            ['label' => 'Total RDV',   'value' => $stats['total'],     'icon' => 'calendar_month',  'color' => 'bg-[#eff4ff] text-[#003f87]'],
-            ['label' => 'En attente',  'value' => $stats['pending'],   'icon' => 'pending',          'color' => 'bg-yellow-50 text-yellow-700'],
-            ['label' => 'Confirmés',   'value' => $stats['confirmed'], 'icon' => 'check_circle',     'color' => 'bg-green-50 text-green-700'],
-            ['label' => 'Refusés',     'value' => $stats['refused'],   'icon' => 'cancel',           'color' => 'bg-red-50 text-red-700'],
-        ] as $stat)
-            <div class="bg-white rounded-xl p-6 border border-[#c2c6d4]/30 shadow-sm">
-                <div class="flex items-center gap-3 mb-3">
-                    <div class="w-10 h-10 rounded-lg {{ $stat['color'] }} flex items-center justify-center">
-                        <span class="material-symbols-outlined">{{ $stat['icon'] }}</span>
+        {{-- ── Stat cards ── --}}
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            @foreach([
+                ['label' => 'Total RDV',  'value' => $totalAppointments,    'icon' => 'calendar_month', 'bg' => 'bg-blue-100',   'text' => 'text-blue-600'],
+                ['label' => 'En attente', 'value' => $pendingAppointments,  'icon' => 'pending',         'bg' => 'bg-yellow-100', 'text' => 'text-yellow-600'],
+                ['label' => 'Acceptés',   'value' => $acceptedAppointments, 'icon' => 'check_circle',    'bg' => 'bg-green-100',  'text' => 'text-green-600'],
+                ['label' => 'Refusés',    'value' => $rejectedAppointments, 'icon' => 'cancel',          'bg' => 'bg-red-100',    'text' => 'text-red-500'],
+            ] as $stat)
+                <div class="bg-white rounded-2xl border border-[#e0e7ff] p-5 flex items-center gap-4">
+                    <div class="w-12 h-12 {{ $stat['bg'] }} rounded-xl flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined {{ $stat['text'] }} text-2xl">{{ $stat['icon'] }}</span>
+                    </div>
+                    <div>
+                        <p class="text-xs text-[#526069]">{{ $stat['label'] }}</p>
+                        <p class="text-3xl font-bold text-[#0d1c2f]">{{ $stat['value'] }}</p>
                     </div>
                 </div>
-                <p class="text-3xl font-bold text-[#0d1c2f]">{{ $stat['value'] }}</p>
-                <p class="text-sm text-[#424752] mt-1">{{ $stat['label'] }}</p>
-            </div>
-        @endforeach
-    </div>
-
-    {{-- Appointments --}}
-    <h2 class="text-xl font-semibold text-[#0d1c2f] mb-6">Demandes de rendez-vous</h2>
-
-    @forelse($appointments as $apt)
-        <div class="bg-white rounded-xl p-6 border border-[#c2c6d4]/30 shadow-sm flex flex-col md:flex-row md:items-center gap-6 mb-4">
-
-            {{-- Date --}}
-            <div class="w-16 h-16 bg-[#eff4ff] rounded-xl flex flex-col items-center justify-center text-[#003f87] shrink-0">
-                <span class="text-xs font-semibold">{{ strtoupper(date('M', strtotime($apt->date))) }}</span>
-                <span class="text-2xl font-semibold">{{ date('d', strtotime($apt->date)) }}</span>
-            </div>
-
-            {{-- Info --}}
-            <div class="flex-1">
-                <div class="flex items-center gap-2 mb-1">
-                    <span class="text-sm font-bold text-[#0d1c2f]">{{ $apt->patient->name }}</span>
-                    <span class="px-2 py-0.5 rounded-full text-[11px] font-bold
-                        @if($apt->status === 'confirmed') bg-green-100 text-green-700
-                        @elseif($apt->status === 'pending') bg-yellow-100 text-yellow-700
-                        @elseif($apt->status === 'cancelled') bg-red-100 text-red-700
-                        @else bg-gray-100 text-gray-700 @endif">
-                        {{ ucfirst($apt->status) }}
-                    </span>
-                </div>
-                <p class="text-sm text-[#424752]">{{ $apt->time_slot }}</p>
-                @if($apt->reason)
-                    <p class="text-xs text-[#526069] mt-1">{{ $apt->reason }}</p>
-                @endif
-            </div>
-
-            {{-- Actions --}}
-            @if($apt->status === 'pending')
-                <div class="flex gap-3 shrink-0">
-                    <form action="/doctor/appointments/{{ $apt->id }}/confirm" method="POST">
-                        @csrf
-                        @method('PATCH')
-                        <button class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
-                            Confirmer
-                        </button>
-                    </form>
-                    <form action="/doctor/appointments/{{ $apt->id }}/refuse" method="POST">
-                        @csrf
-                        @method('PATCH')
-                        <button class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
-                            Refuser
-                        </button>
-                    </form>
-                </div>
-            @endif
+            @endforeach
         </div>
-    @empty
-        <div class="bg-white rounded-xl p-12 border border-[#c2c6d4]/30 shadow-sm text-center">
-            <span class="material-symbols-outlined text-6xl text-[#c2c6d4] mb-4 block">calendar_today</span>
-            <p class="text-[#424752]">Aucun rendez-vous pour le moment</p>
+
+        {{-- ── Alerte rendez-vous en attente ── --}}
+        @if($pendingAppointments > 0)
+            <div class="bg-yellow-50 border border-yellow-200 rounded-2xl px-5 py-4 flex items-center gap-4">
+                <div class="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-white text-xl">notification_important</span>
+                </div>
+                <div class="flex-1">
+                    <p class="font-semibold text-yellow-900">
+                        {{ $pendingAppointments }} demande{{ $pendingAppointments > 1 ? 's' : '' }} en attente de réponse
+                    </p>
+                    <p class="text-sm text-yellow-700">Répondez rapidement pour confirmer les créneaux à vos patients.</p>
+                </div>
+                <a href="{{ route('doctor.appointments.index') }}?status=pending"
+                   class="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 text-sm font-bold rounded-xl transition-colors shrink-0">
+                    Voir les demandes
+                </a>
+            </div>
+        @endif
+
+        {{-- ── Prochains rendez-vous ── --}}
+        <div class="bg-white rounded-2xl border border-[#e0e7ff] overflow-hidden">
+            <div class="px-6 py-4 border-b border-[#e0e7ff] flex items-center justify-between">
+                <h2 class="font-bold text-[#0d1c2f] flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[#003f87]">upcoming</span>
+                    Prochains rendez-vous
+                </h2>
+                <a href="{{ route('doctor.appointments.index') }}"
+                   class="text-xs font-semibold text-[#003f87] hover:underline">
+                    Voir tous →
+                </a>
+            </div>
+
+            <div class="divide-y divide-[#f0f4ff]">
+                @forelse($upcomingAppointments as $apt)
+                    @php
+                        $badge = match($apt->status) {
+                            'accepted'  => 'bg-green-100 text-green-800',
+                            'pending'   => 'bg-yellow-100 text-yellow-800',
+                            'cancelled' => 'bg-gray-100 text-gray-600',
+                            'rejected'  => 'bg-red-100 text-red-700',
+                            default     => 'bg-gray-100 text-gray-600',
+                        };
+                        $statusLabel = match($apt->status) {
+                            'accepted'  => 'Confirmé',
+                            'pending'   => 'En attente',
+                            'cancelled' => 'Annulé',
+                            'rejected'  => 'Refusé',
+                            default     => ucfirst($apt->status),
+                        };
+                    @endphp
+                    <div class="flex items-center gap-4 px-6 py-4 hover:bg-[#f8faff] transition-colors">
+
+                        {{-- Date badge --}}
+                        <div class="w-14 h-14 bg-[#eff4ff] rounded-xl flex flex-col items-center justify-center text-[#003f87] shrink-0">
+                            @php
+                                $mois = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+                            @endphp
+                            <span class="text-[10px] font-bold uppercase">{{ $mois[$apt->appointment_date->month - 1] }}</span>
+                            <span class="text-xl font-bold leading-tight">{{ $apt->appointment_date->format('d') }}</span>
+                        </div>
+
+                        {{-- Infos --}}
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="font-semibold text-[#0d1c2f] text-sm">{{ $apt->patient->name }}</p>
+                                <span class="px-2 py-0.5 rounded-full text-[11px] font-bold {{ $badge }}">{{ $statusLabel }}</span>
+                            </div>
+                            @if($apt->availability)
+                                <p class="text-xs text-[#526069] mt-0.5">
+                                    {{ substr($apt->availability->start_time, 0, 5) }} – {{ substr($apt->availability->end_time, 0, 5) }}
+                                </p>
+                            @endif
+                            @if($apt->notes)
+                                <p class="text-xs text-[#526069] mt-0.5 truncate">{{ $apt->notes }}</p>
+                            @endif
+                        </div>
+
+                        {{-- Actions rapides --}}
+                        <div class="flex items-center gap-2 shrink-0">
+                            @if($apt->status === 'pending')
+                                <form method="POST" action="{{ route('doctor.appointments.update', $apt) }}" class="inline">
+                                    @csrf @method('PATCH')
+                                    <input type="hidden" name="status" value="accepted">
+                                    <button type="submit"
+                                        class="w-8 h-8 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center justify-center transition-colors"
+                                        title="Accepter">
+                                        <span class="material-symbols-outlined text-[16px]">check</span>
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ route('doctor.appointments.update', $apt) }}" class="inline">
+                                    @csrf @method('PATCH')
+                                    <input type="hidden" name="status" value="rejected">
+                                    <button type="submit"
+                                        class="w-8 h-8 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg flex items-center justify-center transition-colors"
+                                        title="Refuser">
+                                        <span class="material-symbols-outlined text-[16px]">close</span>
+                                    </button>
+                                </form>
+                            @endif
+                            <a href="{{ route('doctor.appointments.show', $apt) }}"
+                               class="w-8 h-8 border border-[#c2c6d4] hover:border-[#003f87] text-[#526069] hover:text-[#003f87] rounded-lg flex items-center justify-center transition-colors"
+                               title="Détails">
+                                <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+                            </a>
+                        </div>
+                    </div>
+                @empty
+                    <div class="px-6 py-12 text-center">
+                        <span class="material-symbols-outlined text-5xl text-[#c2c6d4] block mb-3">calendar_today</span>
+                        <p class="text-[#526069] font-medium">Aucun rendez-vous à venir.</p>
+                        <p class="text-xs text-[#526069] mt-1">Ajoutez des créneaux pour recevoir des demandes.</p>
+                    </div>
+                @endforelse
+            </div>
         </div>
-    @endforelse
+
+    @endif
 </div>
 @endsection

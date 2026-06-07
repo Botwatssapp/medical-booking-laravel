@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Modèle représentant un utilisateur du système.
@@ -37,6 +38,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'profile_image',
     ];
 
     /**
@@ -60,6 +62,21 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
         ];
+    }
+
+    // =========================================================================
+    // Accessors
+    // =========================================================================
+
+    /**
+     * URL publique de la photo de profil.
+     * Retourne l'URL du fichier stocké, ou null si aucune image.
+     */
+    public function getProfileImageUrlAttribute(): ?string
+    {
+        return $this->profile_image
+            ? Storage::disk('public')->url($this->profile_image)
+            : null;
     }
 
     // =========================================================================
