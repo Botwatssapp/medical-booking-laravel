@@ -33,7 +33,7 @@
         .role-card:has(input:checked) .role-check { opacity: 1; }
     </style>
 </head>
-<body class="min-h-screen bg-dots flex items-center justify-center p-4 relative overflow-hidden">
+<body class="min-h-screen bg-dots flex items-center justify-center py-6 px-4 relative overflow-x-hidden">
 
     {{-- Orbs --}}
     <div class="fixed top-[-10%] right-[-10%]  w-[550px] h-[550px] bg-[#003f87] rounded-full opacity-[0.16] blur-[130px] pointer-events-none"></div>
@@ -42,7 +42,7 @@
     <div class="w-full max-w-[1040px] grid grid-cols-1 lg:grid-cols-2 rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.5)] border border-white/8 my-6">
 
         {{-- ══ Panneau gauche — Formulaire ══ --}}
-        <div class="bg-[#080f1c] flex items-center justify-center p-8 md:p-12 order-2 lg:order-1">
+        <div class="bg-[#080f1c] flex items-center justify-center p-8 lg:p-10 xl:p-12 order-2 lg:order-1">
             <div class="w-full max-w-[360px]">
 
                 {{-- Logo mobile --}}

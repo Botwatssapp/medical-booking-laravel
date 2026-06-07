@@ -19,13 +19,13 @@
         }
     </style>
 </head>
-<body class="min-h-screen bg-dots flex items-center justify-center p-4 relative overflow-hidden">
+<body class="min-h-screen bg-dots flex items-center justify-center py-6 px-4 relative overflow-x-hidden">
 
     {{-- Orbs décoratifs --}}
     <div class="fixed top-[-15%] left-[-8%]  w-[600px] h-[600px] bg-[#003f87] rounded-full opacity-[0.18] blur-[130px] pointer-events-none"></div>
     <div class="fixed bottom-[-20%] right-[-5%] w-[480px] h-[480px] bg-[#0a4d35] rounded-full opacity-[0.14] blur-[110px] pointer-events-none"></div>
 
-    <div class="w-full max-w-[980px] grid grid-cols-1 lg:grid-cols-5 rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.5)] border border-white/8">
+    <div class="w-full max-w-[980px] my-4 grid grid-cols-1 lg:grid-cols-5 rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.5)] border border-white/8">
 
         {{-- ══ Panneau gauche — Branding ══ --}}
         <div class="lg:col-span-2 bg-gradient-to-br from-[#003f87] via-[#002d63] to-[#001535] p-10 flex flex-col justify-between relative overflow-hidden">
@@ -68,7 +68,7 @@
         </div>
 
         {{-- ══ Panneau droit — Formulaire ══ --}}
-        <div class="lg:col-span-3 bg-[#080f1c] flex items-center justify-center p-8 md:p-14">
+        <div class="lg:col-span-3 bg-[#080f1c] flex items-center justify-center p-8 lg:p-12 xl:p-14">
             <div class="w-full max-w-[340px]">
 
                 {{-- Titre --}}
