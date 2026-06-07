@@ -27,6 +27,18 @@ class DashboardController extends Controller
     {
         $doctor = auth()->user()->doctor;
 
+        // Médecin inscrit mais profil pas encore créé par l'admin
+        if (!$doctor) {
+            return view('doctor.dashboard', [
+                'profileIncomplete'    => true,
+                'totalAppointments'    => 0,
+                'pendingAppointments'  => 0,
+                'acceptedAppointments' => 0,
+                'rejectedAppointments' => 0,
+                'upcomingAppointments' => collect(),
+            ]);
+        }
+
         // Agrégation des statuts en une seule requête SQL
         $stats = $doctor->appointments()
             ->selectRaw("
@@ -37,15 +49,16 @@ class DashboardController extends Controller
             ")
             ->first();
 
-        // Prochains rendez-vous futurs avec les données du patient
+        // Prochains rendez-vous futurs avec les données du patient et du créneau
         $upcomingAppointments = $doctor->appointments()
-            ->with('patient')
+            ->with(['patient', 'availability'])
             ->upcoming()
             ->orderBy('appointment_date')
             ->limit(5)
             ->get();
 
         return view('doctor.dashboard', [
+            'profileIncomplete'    => false,
             'totalAppointments'    => $stats->total    ?? 0,
             'pendingAppointments'  => $stats->pending  ?? 0,
             'acceptedAppointments' => $stats->accepted ?? 0,

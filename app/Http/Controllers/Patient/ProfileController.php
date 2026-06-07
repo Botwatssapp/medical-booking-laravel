@@ -5,51 +5,53 @@ namespace App\Http\Controllers\Patient;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
-/**
- * Contrôleur du profil patient.
- *
- * Permet au patient de consulter et modifier ses informations personnelles.
- * Seuls les champs présents dans la table users sont mis à jour ici.
- */
 class ProfileController extends Controller
 {
-    /**
-     * Affiche le formulaire de modification du profil patient.
-     *
-     * @return View
-     */
     public function edit(): View
     {
-        $user = auth()->user();
-
-        return view('patient.profile.edit', compact('user'));
+        return view('patient.profile.edit', ['user' => auth()->user()]);
     }
 
-    /**
-     * Met à jour les informations du profil du patient connecté.
-     *
-     * Correction : suppression de `phone` et `address` qui n'existent pas
-     * dans la table `users` (ils appartiennent à la table `doctors`).
-     * L'unicité de l'email ignore l'utilisateur courant.
-     *
-     * @param  Request $request
-     * @return RedirectResponse
-     */
     public function update(Request $request): RedirectResponse
     {
         $user = auth()->user();
 
         $validated = $request->validate([
-            'name'  => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+            'name'          => ['required', 'string', 'max:255'],
+            'email'         => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+            'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ]);
+
+        if ($request->hasFile('profile_image')) {
+            // Supprime l'ancienne image avant de stocker la nouvelle
+            if ($user->profile_image) {
+                Storage::disk('public')->delete($user->profile_image);
+            }
+            $validated['profile_image'] = $request->file('profile_image')
+                ->store('profile/image', 'public');
+        } else {
+            unset($validated['profile_image']);
+        }
 
         $user->update($validated);
 
         return redirect()->route('patient.profile.edit')
             ->with('success', 'Profil mis à jour avec succès.');
+    }
+
+    public function removeImage(): RedirectResponse
+    {
+        $user = auth()->user();
+
+        if ($user->profile_image) {
+            Storage::disk('public')->delete($user->profile_image);
+            $user->update(['profile_image' => null]);
+        }
+
+        return back()->with('success', 'Photo supprimée.');
     }
 }

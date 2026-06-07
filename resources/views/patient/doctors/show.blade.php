@@ -1,47 +1,108 @@
 @extends('layouts.app')
+@section('title', 'Dr. '.$doctor->user->name)
 
 @section('content')
-<div class="max-w-4xl mx-auto px-4 py-8">
-    <a href="{{ route('patient.doctors.index') }}" class="text-blue-600 hover:text-blue-800 mb-6 inline-block">← Retour</a>
+<div class="max-w-4xl mx-auto px-8 py-10">
 
-    <div class="bg-white rounded-lg shadow p-8">
-        <div class="flex gap-8">
+    <a href="{{ route('patient.doctors.index') }}"
+       class="text-[#003f87] hover:underline text-sm mb-6 inline-flex items-center gap-1">
+        <span class="material-symbols-outlined text-sm">arrow_back</span> Retour à la liste
+    </a>
+
+    {{-- Profil médecin --}}
+    <div class="bg-white rounded-xl border border-[#c2c6d4]/30 shadow-sm p-8 mb-8">
+        <div class="flex flex-col sm:flex-row gap-8 items-start">
             @if($doctor->photo)
-                <img src="{{ asset('storage/' . $doctor->photo) }}" alt="{{ $doctor->user->name }}" class="w-48 h-48 rounded object-cover">
+                <img src="{{ asset('storage/'.$doctor->photo) }}"
+                     alt="{{ $doctor->user->name }}"
+                     class="w-32 h-32 rounded-xl object-cover shrink-0">
+            @else
+                <div class="w-32 h-32 rounded-xl bg-[#eff4ff] text-[#003f87] flex items-center justify-center text-4xl font-bold shrink-0">
+                    {{ strtoupper(substr($doctor->user->name, 0, 1)) }}
+                </div>
             @endif
-            <div>
-                <h2 class="text-3xl font-bold text-gray-900">{{ $doctor->user->name }}</h2>
-                <p class="text-xl text-blue-600">{{ $doctor->speciality->name }}</p>
-                <p class="text-gray-600 mt-4">{{ $doctor->bio }}</p>
-                
-                @if($doctor->phone)
-                    <p class="mt-4"><strong>Téléphone:</strong> {{ $doctor->phone }}</p>
-                @endif
-                @if($doctor->address)
-                    <p><strong>Adresse:</strong> {{ $doctor->address }}</p>
+
+            <div class="flex-1">
+                <h1 class="text-2xl font-bold text-[#0d1c2f]">Dr. {{ $doctor->user->name }}</h1>
+                <p class="text-[#003f87] font-medium mt-1">{{ $doctor->speciality->name }}</p>
+
+                @if($doctor->bio)
+                    <p class="text-[#424752] mt-4 text-sm leading-relaxed">{{ $doctor->bio }}</p>
                 @endif
 
-                <a href="{{ route('patient.appointments.create') }}" class="mt-6 inline-block bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded">
-                    Prendre rendez-vous
-                </a>
-            </div>
-        </div>
-
-        @if($doctor->availabilities->isNotEmpty())
-            <div class="mt-8">
-                <h3 class="text-xl font-semibold text-gray-900 mb-4">Disponibilités</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    @foreach($doctor->availabilities as $availability)
-                        @if($availability->is_available && $availability->date >= today())
-                            <div class="border rounded p-4">
-                                <p class="font-semibold">{{ $availability->date->format('d/m/Y') }}</p>
-                                <p class="text-sm text-gray-600">{{ $availability->start_time }} - {{ $availability->end_time }}</p>
-                            </div>
-                        @endif
-                    @endforeach
+                <div class="mt-4 flex flex-wrap gap-6 text-sm text-[#526069]">
+                    @if($doctor->phone)
+                        <span class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">phone</span>
+                            {{ $doctor->phone }}
+                        </span>
+                    @endif
+                    @if($doctor->address)
+                        <span class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">location_on</span>
+                            {{ $doctor->address }}
+                        </span>
+                    @endif
                 </div>
             </div>
-        @endif
+        </div>
     </div>
+
+    {{-- Créneaux disponibles --}}
+    <h2 class="text-xl font-semibold text-[#0d1c2f] mb-4">
+        Créneaux disponibles
+        <span class="text-sm font-normal text-[#526069] ml-2">({{ $availabilities->count() }} créneau(x))</span>
+    </h2>
+
+    @if($availabilities->isEmpty())
+        <div class="bg-white rounded-xl border border-[#c2c6d4]/30 shadow-sm p-10 text-center text-[#424752]">
+            <span class="material-symbols-outlined text-5xl text-[#c2c6d4] block mb-3">event_busy</span>
+            <p class="font-medium">Ce médecin n'a aucun créneau disponible pour le moment.</p>
+            <a href="{{ route('patient.doctors.index') }}" class="mt-4 inline-block text-[#003f87] hover:underline text-sm">
+                Consulter d'autres médecins
+            </a>
+        </div>
+    @else
+        {{-- Grouper par date --}}
+        @php
+            $grouped = $availabilities->groupBy(fn($a) => $a->date->format('Y-m-d'));
+        @endphp
+
+        <div class="space-y-6">
+            @foreach($grouped as $date => $slots)
+                <div class="bg-white rounded-xl border border-[#c2c6d4]/30 shadow-sm overflow-hidden">
+                    {{-- En-tête de la date --}}
+                    <div class="bg-[#eff4ff] px-6 py-3 border-b border-[#c2c6d4]/30">
+                        <p class="font-semibold text-[#003f87]">
+                            {{ \Carbon\Carbon::parse($date)->format('d/m/Y') }}
+                            <span class="text-xs font-normal text-[#526069] ml-2">
+                                — {{ $slots->count() }} créneau(x)
+                            </span>
+                        </p>
+                    </div>
+
+                    {{-- Grille des créneaux --}}
+                    <div class="p-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        @foreach($slots as $slot)
+                            <a href="{{ route('patient.appointments.create', ['availability_id' => $slot->id]) }}"
+                               class="flex flex-col items-center p-3 rounded-xl border border-[#003f87]/20 bg-[#f8f9ff]
+                                      hover:bg-[#003f87] hover:text-white hover:border-[#003f87] transition-all group text-center">
+                                <span class="material-symbols-outlined text-[#003f87] group-hover:text-white text-base mb-1">
+                                    schedule
+                                </span>
+                                <span class="text-sm font-bold text-[#0d1c2f] group-hover:text-white">
+                                    {{ substr($slot->start_time, 0, 5) }}
+                                </span>
+                                <span class="text-xs text-[#526069] group-hover:text-white/80">
+                                    – {{ substr($slot->end_time, 0, 5) }}
+                                </span>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    @endif
+
 </div>
 @endsection

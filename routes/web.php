@@ -12,6 +12,7 @@ use App\Http\Controllers\Doctor\ProfileController as DoctorProfile;
 use App\Http\Controllers\Patient\AppointmentController as PatientAppointment;
 use App\Http\Controllers\Patient\DashboardController as PatientDashboard;
 use App\Http\Controllers\Patient\DoctorController as PatientDoctor;
+use App\Http\Controllers\Patient\NotificationController as PatientNotification;
 use App\Http\Controllers\Patient\ProfileController as PatientProfile;
 use Illuminate\Support\Facades\Route;
 
@@ -26,8 +27,17 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Page d'accueil publique
-Route::get('/', fn () => view('auth.login'))->name('home');
+// Page d'accueil : redirige vers le bon tableau de bord si connecté, sinon login
+Route::get('/', function () {
+    if (auth()->check()) {
+        return match (auth()->user()->role) {
+            'admin'  => redirect()->route('admin.dashboard'),
+            'doctor' => redirect()->route('doctor.dashboard'),
+            default  => redirect()->route('patient.dashboard'),
+        };
+    }
+    return view('auth.login');
+})->name('home');
 
 // =========================================================================
 // Routes Admin
@@ -52,9 +62,16 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         ->names('admin.specialties')
         ->except('show');
 
-    // Gestion des rendez-vous (lecture seule pour l'admin)
+    // Gestion des rendez-vous (lecture + contrôle complet)
     Route::get('appointments', [AdminAppointment::class, 'index'])->name('admin.appointments.index');
     Route::get('appointments/{appointment}', [AdminAppointment::class, 'show'])->name('admin.appointments.show');
+    Route::post('appointments/{appointment}/cancel', [AdminAppointment::class, 'cancel'])->name('admin.appointments.cancel');
+    Route::patch('appointments/{appointment}/status', [AdminAppointment::class, 'updateStatus'])->name('admin.appointments.updateStatus');
+
+    // Profil admin
+    Route::get('profile/edit', [\App\Http\Controllers\Admin\ProfileController::class, 'edit'])->name('admin.profile.edit');
+    Route::patch('profile', [\App\Http\Controllers\Admin\ProfileController::class, 'update'])->name('admin.profile.update');
+    Route::delete('profile/image', [\App\Http\Controllers\Admin\ProfileController::class, 'removeImage'])->name('admin.profile.removeImage');
 });
 
 // =========================================================================
@@ -76,6 +93,12 @@ Route::middleware(['auth', 'patient'])->prefix('patient')->group(function () {
     // Profil patient
     Route::get('profile/edit', [PatientProfile::class, 'edit'])->name('patient.profile.edit');
     Route::patch('profile', [PatientProfile::class, 'update'])->name('patient.profile.update');
+    Route::delete('profile/image', [PatientProfile::class, 'removeImage'])->name('patient.profile.removeImage');
+
+    // Notifications internes
+    Route::get('notifications', [PatientNotification::class, 'index'])->name('patient.notifications.index');
+    Route::patch('notifications/read-all', [PatientNotification::class, 'markAllRead'])->name('patient.notifications.readAll');
+    Route::patch('notifications/{id}/read', [PatientNotification::class, 'markRead'])->name('patient.notifications.read');
 });
 
 // =========================================================================
@@ -95,10 +118,13 @@ Route::middleware(['auth', 'doctor'])->prefix('doctor')->group(function () {
     Route::get('appointments/{appointment}', [DoctorAppointment::class, 'show'])->name('doctor.appointments.show');
     Route::patch('appointments/{appointment}', [DoctorAppointment::class, 'update'])->name('doctor.appointments.update');
     Route::delete('appointments/{appointment}', [DoctorAppointment::class, 'destroy'])->name('doctor.appointments.destroy');
+    // Annulation + report automatique sur le premier créneau disponible
+    Route::post('appointments/{appointment}/reschedule', [DoctorAppointment::class, 'reschedule'])->name('doctor.appointments.reschedule');
 
     // Profil médecin
     Route::get('profile/edit', [DoctorProfile::class, 'edit'])->name('doctor.profile.edit');
     Route::patch('profile', [DoctorProfile::class, 'update'])->name('doctor.profile.update');
+    Route::delete('profile/image', [DoctorProfile::class, 'removeImage'])->name('doctor.profile.removeImage');
 });
 
 // =========================================================================

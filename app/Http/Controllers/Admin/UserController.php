@@ -28,14 +28,21 @@ class UserController extends Controller
     {
         $role = $request->query('role');
 
-        $users = User::when(
-            $role && in_array($role, ['patient', 'doctor', 'admin']),
-            fn ($q) => $q->where('role', $role)
-        )
-        ->orderBy('created_at', 'desc')
-        ->paginate(15);
+        $users = User::with('doctor')
+            ->when(
+                $role && in_array($role, ['patient', 'doctor', 'admin']),
+                fn ($q) => $q->where('role', $role)
+            )
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
 
-        return view('admin.users.index', compact('users', 'role'));
+        // Comptes médecins en attente de validation (rôle doctor, pas encore de profil)
+        $pendingDoctors = User::doctors()
+            ->doesntHave('doctor')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('admin.users.index', compact('users', 'role', 'pendingDoctors'));
     }
 
     /**

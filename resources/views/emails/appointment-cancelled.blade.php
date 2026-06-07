@@ -35,11 +35,18 @@
                 </div>
                 <div class="info-row">
                     <span class="label">Date</span>
-                    <span class="value">{{ date('d/m/Y', strtotime($appointment->date)) }}</span>
+                    <span class="value">{{ $appointment->appointment_date->format('d/m/Y') }}</span>
                 </div>
                 <div class="info-row">
                     <span class="label">Heure</span>
-                    <span class="value">{{ $appointment->time_slot }}</span>
+                    <span class="value">
+                        @if($appointment->availability)
+                            {{ substr($appointment->availability->start_time, 0, 5) }}
+                            – {{ substr($appointment->availability->end_time, 0, 5) }}
+                        @else
+                            {{ $appointment->appointment_date->format('H:i') }}
+                        @endif
+                    </span>
                 </div>
             </div>
 

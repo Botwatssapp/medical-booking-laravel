@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Http\Requests\UpdateAppointmentRequest;
 use App\Models\Appointment;
+use App\Models\Availability;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -27,31 +29,51 @@ class AppointmentController extends Controller
      *
      * @return View
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $appointments = auth()->user()->appointments()
-            ->with(['doctor.user', 'doctor.speciality'])
-            ->orderBy('appointment_date', 'desc')
-            ->paginate(10);
+        $query = auth()->user()->appointments()
+            ->with(['doctor.user', 'doctor.speciality', 'availability']);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $appointments = $query->orderBy('appointment_date', 'desc')->paginate(10)->withQueryString();
 
         return view('patient.appointments.index', compact('appointments'));
     }
 
     /**
-     * Affiche le formulaire de création d'un nouveau rendez-vous.
+     * Affiche le formulaire de confirmation de rendez-vous.
      *
+     * Charge la disponibilité sélectionnée depuis le profil du médecin.
+     * Si le créneau n'est plus disponible ou n'existe pas, renvoie null
+     * et la vue affiche un message d'erreur.
+     *
+     * @param  Request $request
      * @return View
      */
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('patient.appointments.create');
+        $availability = null;
+
+        if ($request->filled('availability_id')) {
+            $availability = Availability::with(['doctor.user', 'doctor.speciality'])
+                ->available()
+                ->find($request->integer('availability_id'));
+        }
+
+        return view('patient.appointments.create', compact('availability'));
     }
 
     /**
      * Enregistre un nouveau rendez-vous pour le patient.
      *
-     * Marque la disponibilité comme non disponible dans une transaction
-     * pour éviter les doubles réservations.
+     * `appointment_date` est dérivé de la disponibilité (date + start_time)
+     * et n'est donc pas soumis via le formulaire — évite tout décalage.
+     *
+     * `lockForUpdate()` pose un verrou exclusif sur la ligne de disponibilité
+     * dans la transaction pour prévenir les doubles réservations simultanées.
      *
      * @param  StoreAppointmentRequest $request
      * @return RedirectResponse
@@ -61,13 +83,21 @@ class AppointmentController extends Controller
         DB::transaction(function () use ($request) {
             $data = $request->validated();
 
-            auth()->user()->appointments()->create($data);
+            // Verrou exclusif : empêche la double réservation concurrente
+            $availability = Availability::lockForUpdate()
+                ->where('id', $data['availability_id'])
+                ->where('is_available', true)
+                ->firstOrFail();
 
-            // Marquer le créneau comme réservé (non disponible)
-            if (!empty($data['availability_id'])) {
-                \App\Models\Availability::where('id', $data['availability_id'])
-                    ->update(['is_available' => false]);
-            }
+            // Dériver appointment_date depuis la disponibilité (date + heure de début)
+            $data['appointment_date'] = $availability->date->format('Y-m-d')
+                . ' ' . $availability->start_time;
+
+            /** @var \App\Models\User $patient */
+            $patient = auth()->user();
+            $patient->appointments()->create($data);
+
+            $availability->update(['is_available' => false]);
         });
 
         return redirect()->route('patient.appointments.index')

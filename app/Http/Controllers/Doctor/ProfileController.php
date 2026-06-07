@@ -8,58 +8,61 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
-/**
- * Contrôleur du profil médecin.
- *
- * Permet au médecin de consulter et mettre à jour ses informations
- * professionnelles : téléphone, adresse, biographie et photo.
- */
 class ProfileController extends Controller
 {
-    /**
-     * Affiche le formulaire de modification du profil médecin.
-     *
-     * @return View
-     */
     public function edit(): View
     {
-        $doctor = auth()->user()->doctor;
+        $user   = auth()->user();
+        $doctor = $user->doctor;
 
-        return view('doctor.profile.edit', compact('doctor'));
+        return view('doctor.profile.edit', compact('user', 'doctor'));
     }
 
-    /**
-     * Met à jour le profil du médecin connecté.
-     *
-     * Correction : utilisation de l'injection de dépendance `Request`
-     * au lieu du helper global `request()`.
-     * L'ancienne photo est supprimée du storage avant le remplacement.
-     *
-     * @param  Request $request
-     * @return RedirectResponse
-     */
     public function update(Request $request): RedirectResponse
     {
-        $doctor = auth()->user()->doctor;
+        $user   = auth()->user();
+        $doctor = $user->doctor;
 
         $validated = $request->validate([
-            'phone'   => ['nullable', 'string', 'max:20'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'bio'     => ['nullable', 'string', 'max:1000'],
-            'photo'   => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+            'phone'         => ['nullable', 'string', 'max:20'],
+            'address'       => ['nullable', 'string', 'max:255'],
+            'bio'           => ['nullable', 'string', 'max:1000'],
         ]);
 
-        if ($request->hasFile('photo')) {
-            // Suppression de l'ancienne photo pour éviter les fichiers orphelins
-            if ($doctor->photo) {
-                Storage::disk('public')->delete($doctor->photo);
+        // — Photo de profil du compte utilisateur —
+        if ($request->hasFile('profile_image')) {
+            if ($user->profile_image) {
+                Storage::disk('public')->delete($user->profile_image);
             }
-            $validated['photo'] = $request->file('photo')->store('doctors', 'public');
+            $user->update([
+                'profile_image' => $request->file('profile_image')
+                    ->store('profile/image', 'public'),
+            ]);
         }
 
-        $doctor->update($validated);
+        // — Informations médicales du profil docteur —
+        if ($doctor) {
+            $doctor->update([
+                'phone'   => $validated['phone']   ?? $doctor->phone,
+                'address' => $validated['address'] ?? $doctor->address,
+                'bio'     => $validated['bio']     ?? $doctor->bio,
+            ]);
+        }
 
         return redirect()->route('doctor.profile.edit')
             ->with('success', 'Profil mis à jour avec succès.');
+    }
+
+    public function removeImage(): RedirectResponse
+    {
+        $user = auth()->user();
+
+        if ($user->profile_image) {
+            Storage::disk('public')->delete($user->profile_image);
+            $user->update(['profile_image' => null]);
+        }
+
+        return back()->with('success', 'Photo supprimée.');
     }
 }
