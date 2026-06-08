@@ -22,9 +22,10 @@ class SpecialtyController extends Controller
      *
      * @return View
      */
-    public function index(): View
+    public function index(\Illuminate\Http\Request $request): View
     {
-        $specialties = Speciality::orderBy('name')->paginate(15);
+        $direction   = $request->query('direction') === 'desc' ? 'desc' : 'asc';
+        $specialties = Speciality::orderBy('name', $direction)->paginate(15)->withQueryString();
 
         return view('admin.specialties.index', compact('specialties'));
     }

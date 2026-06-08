@@ -39,6 +39,9 @@ Route::get('/', function () {
     return view('auth.login');
 })->name('home');
 
+// Fallback GET /logout → redirige vers login sans erreur 405
+Route::get('/logout', fn () => redirect()->route('login'))->name('logout.get');
+
 // =========================================================================
 // Routes Admin
 // =========================================================================

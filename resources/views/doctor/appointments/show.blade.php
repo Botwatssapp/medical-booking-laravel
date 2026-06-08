@@ -36,14 +36,92 @@
         <div class="p-6 space-y-4">
 
             {{-- Patient --}}
-            <div class="flex items-center gap-4 p-4 bg-[#f8faff] rounded-xl border border-[#e0e7ff]">
-                <div class="w-12 h-12 rounded-full bg-[#003f87] flex items-center justify-center text-white text-lg font-bold shrink-0">
-                    {{ strtoupper(substr($appointment->patient->name, 0, 1)) }}
+            @php $p = $appointment->patient; @endphp
+            <div class="p-4 bg-[#f8faff] rounded-xl border border-[#e0e7ff] space-y-4">
+
+                {{-- Identité --}}
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-[#003f87] flex items-center justify-center text-white text-lg font-bold shrink-0 overflow-hidden">
+                        @if($p->profile_image_url)
+                            <img src="{{ $p->profile_image_url }}" class="w-full h-full object-cover" alt="">
+                        @else
+                            {{ strtoupper(substr($p->name, 0, 1)) }}
+                        @endif
+                    </div>
+                    <div>
+                        <p class="font-bold text-[#0d1c2f]">{{ $p->name }}</p>
+                        <p class="text-sm text-[#526069]">{{ $p->email }}</p>
+                        @if($p->phone)
+                            <p class="text-sm text-[#526069]">{{ $p->phone }}</p>
+                        @endif
+                    </div>
                 </div>
-                <div>
-                    <p class="font-bold text-[#0d1c2f]">{{ $appointment->patient->name }}</p>
-                    <p class="text-sm text-[#526069]">{{ $appointment->patient->email }}</p>
-                </div>
+
+                {{-- Infos médicales --}}
+                @php
+                    $hasAnyMedical = $p->gender || $p->birth_date || $p->blood_type || $p->weight || $p->height;
+                @endphp
+                @if($hasAnyMedical)
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2 border-t border-[#e0e7ff]">
+                        @if($p->gender)
+                            <div class="bg-white rounded-lg px-3 py-2 border border-[#e0e7ff]">
+                                <p class="text-[10px] font-bold text-[#526069] uppercase tracking-wide">Sexe</p>
+                                <p class="text-sm font-semibold text-[#0d1c2f]">{{ $p->gender_label }}</p>
+                            </div>
+                        @endif
+                        @if($p->birth_date)
+                            <div class="bg-white rounded-lg px-3 py-2 border border-[#e0e7ff]">
+                                <p class="text-[10px] font-bold text-[#526069] uppercase tracking-wide">Âge</p>
+                                <p class="text-sm font-semibold text-[#0d1c2f]">{{ $p->age }} ans
+                                    <span class="text-xs font-normal text-[#526069]">({{ $p->birth_date->format('d/m/Y') }})</span>
+                                </p>
+                            </div>
+                        @endif
+                        @if($p->blood_type)
+                            <div class="bg-white rounded-lg px-3 py-2 border border-[#e0e7ff]">
+                                <p class="text-[10px] font-bold text-[#526069] uppercase tracking-wide">Groupe sanguin</p>
+                                <p class="text-sm font-semibold text-red-700">{{ $p->blood_type }}</p>
+                            </div>
+                        @endif
+                        @if($p->weight)
+                            <div class="bg-white rounded-lg px-3 py-2 border border-[#e0e7ff]">
+                                <p class="text-[10px] font-bold text-[#526069] uppercase tracking-wide">Poids</p>
+                                <p class="text-sm font-semibold text-[#0d1c2f]">{{ rtrim(rtrim($p->weight, '0'), '.') }} kg</p>
+                            </div>
+                        @endif
+                        @if($p->height)
+                            <div class="bg-white rounded-lg px-3 py-2 border border-[#e0e7ff]">
+                                <p class="text-[10px] font-bold text-[#526069] uppercase tracking-wide">Taille</p>
+                                <p class="text-sm font-semibold text-[#0d1c2f]">{{ rtrim(rtrim($p->height, '0'), '.') }} cm</p>
+                            </div>
+                        @endif
+                        @if($p->weight && $p->height && $p->height > 0)
+                            @php $bmi = round($p->weight / (($p->height / 100) ** 2), 1); @endphp
+                            <div class="bg-white rounded-lg px-3 py-2 border border-[#e0e7ff]">
+                                <p class="text-[10px] font-bold text-[#526069] uppercase tracking-wide">IMC</p>
+                                <p class="text-sm font-semibold text-[#0d1c2f]">{{ $bmi }}</p>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
+                {{-- Adresse & contact urgence --}}
+                @if($p->address || $p->emergency_contact)
+                    <div class="space-y-1.5 pt-2 border-t border-[#e0e7ff]">
+                        @if($p->address)
+                            <div class="flex items-start gap-2 text-sm text-[#526069]">
+                                <span class="material-symbols-outlined text-[16px] text-[#003f87] shrink-0 mt-0.5">location_on</span>
+                                {{ $p->address }}
+                            </div>
+                        @endif
+                        @if($p->emergency_contact)
+                            <div class="flex items-start gap-2 text-sm text-[#526069]">
+                                <span class="material-symbols-outlined text-[16px] text-red-500 shrink-0 mt-0.5">emergency</span>
+                                <span><span class="font-semibold text-[#0d1c2f]">Urgence :</span> {{ $p->emergency_contact }}</span>
+                            </div>
+                        @endif
+                    </div>
+                @endif
             </div>
 
             <div class="grid grid-cols-2 gap-4">

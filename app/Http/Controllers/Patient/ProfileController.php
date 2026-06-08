@@ -21,9 +21,17 @@ class ProfileController extends Controller
         $user = auth()->user();
 
         $validated = $request->validate([
-            'name'          => ['required', 'string', 'max:255'],
-            'email'         => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
-            'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+            'name'              => ['required', 'string', 'max:255'],
+            'email'             => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+            'profile_image'     => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+            'phone'             => ['nullable', 'string', 'max:20'],
+            'gender'            => ['nullable', 'in:male,female,other'],
+            'birth_date'        => ['nullable', 'date', 'before:today'],
+            'blood_type'        => ['nullable', 'in:A+,A-,B+,B-,AB+,AB-,O+,O-'],
+            'weight'            => ['nullable', 'numeric', 'min:1', 'max:500'],
+            'height'            => ['nullable', 'numeric', 'min:30', 'max:300'],
+            'address'           => ['nullable', 'string', 'max:500'],
+            'emergency_contact' => ['nullable', 'string', 'max:255'],
         ]);
 
         if ($request->hasFile('profile_image')) {

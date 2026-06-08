@@ -14,12 +14,28 @@
         </a>
     </div>
 
+    @php
+        $sortCol = request('sort', 'name');
+        $sortDir = request('direction', 'asc');
+        $sortLink = fn($col) => request()->fullUrlWithQuery(['sort' => $col, 'direction' => ($sortCol === $col && $sortDir === 'asc') ? 'desc' : 'asc', 'page' => 1]);
+        $sortIcon = fn($col) => $sortCol === $col ? ($sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more';
+    @endphp
     <div class="bg-white rounded-2xl border border-[#e0e7ff] overflow-hidden">
         <table class="w-full">
             <thead class="bg-[#f8faff] border-b border-[#e0e7ff]">
                 <tr>
-                    <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">Médecin</th>
-                    <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">Spécialité</th>
+                    <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">
+                        <a href="{{ $sortLink('name') }}" class="flex items-center gap-1 group {{ $sortCol === 'name' ? 'text-[#003f87]' : 'hover:text-[#003f87]' }}">
+                            Médecin
+                            <span class="material-symbols-outlined text-[13px] {{ $sortCol === 'name' ? '' : 'opacity-30 group-hover:opacity-70' }}">{{ $sortIcon('name') }}</span>
+                        </a>
+                    </th>
+                    <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">
+                        <a href="{{ $sortLink('speciality') }}" class="flex items-center gap-1 group {{ $sortCol === 'speciality' ? 'text-[#003f87]' : 'hover:text-[#003f87]' }}">
+                            Spécialité
+                            <span class="material-symbols-outlined text-[13px] {{ $sortCol === 'speciality' ? '' : 'opacity-30 group-hover:opacity-70' }}">{{ $sortIcon('speciality') }}</span>
+                        </a>
+                    </th>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">Contact</th>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">Actions</th>
                 </tr>

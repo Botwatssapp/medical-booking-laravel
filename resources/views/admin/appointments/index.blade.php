@@ -60,14 +60,30 @@
     </form>
 
     {{-- ── Table ── --}}
+    @php
+        $sortCol  = request('sort', 'appointment_date');
+        $sortDir  = request('direction', 'desc');
+        $sortLink = fn($col) => request()->fullUrlWithQuery(['sort' => $col, 'direction' => ($sortCol === $col && $sortDir === 'asc') ? 'desc' : 'asc', 'page' => 1]);
+        $sortIcon = fn($col) => $sortCol === $col ? ($sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more';
+    @endphp
     <div class="bg-white rounded-2xl border border-[#e0e7ff] overflow-hidden">
         <table class="w-full">
             <thead class="bg-[#f8faff] border-b border-[#e0e7ff]">
                 <tr>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">Patient</th>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">Médecin</th>
-                    <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">Date</th>
-                    <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">Statut</th>
+                    <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">
+                        <a href="{{ $sortLink('appointment_date') }}" class="flex items-center gap-1 group {{ $sortCol === 'appointment_date' ? 'text-[#003f87]' : 'hover:text-[#003f87]' }}">
+                            Date
+                            <span class="material-symbols-outlined text-[13px] {{ $sortCol === 'appointment_date' ? '' : 'opacity-30 group-hover:opacity-70' }}">{{ $sortIcon('appointment_date') }}</span>
+                        </a>
+                    </th>
+                    <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">
+                        <a href="{{ $sortLink('status') }}" class="flex items-center gap-1 group {{ $sortCol === 'status' ? 'text-[#003f87]' : 'hover:text-[#003f87]' }}">
+                            Statut
+                            <span class="material-symbols-outlined text-[13px] {{ $sortCol === 'status' ? '' : 'opacity-30 group-hover:opacity-70' }}">{{ $sortIcon('status') }}</span>
+                        </a>
+                    </th>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">Actions</th>
                 </tr>
             </thead>

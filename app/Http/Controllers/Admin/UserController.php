@@ -28,13 +28,18 @@ class UserController extends Controller
     {
         $role = $request->query('role');
 
+        $allowedSorts = ['name', 'created_at'];
+        $sort      = in_array($request->query('sort'), $allowedSorts) ? $request->query('sort') : 'created_at';
+        $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
+
         $users = User::with('doctor')
             ->when(
                 $role && in_array($role, ['patient', 'doctor', 'admin']),
                 fn ($q) => $q->where('role', $role)
             )
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->orderBy($sort, $direction)
+            ->paginate(15)
+            ->withQueryString();
 
         // Comptes médecins en attente de validation (rôle doctor, pas encore de profil)
         $pendingDoctors = User::doctors()

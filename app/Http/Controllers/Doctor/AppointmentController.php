@@ -26,7 +26,8 @@ class AppointmentController extends Controller
             $query->where('status', $request->status);
         }
 
-        $appointments = $query->orderBy('appointment_date', 'desc')->paginate(15)->withQueryString();
+        $direction    = $request->query('direction') === 'asc' ? 'asc' : 'desc';
+        $appointments = $query->orderBy('appointment_date', $direction)->paginate(15)->withQueryString();
 
         return view('doctor.appointments.index', compact('appointments'));
     }

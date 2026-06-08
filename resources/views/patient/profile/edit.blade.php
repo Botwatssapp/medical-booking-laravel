@@ -2,7 +2,7 @@
 @section('title', 'Mon profil')
 
 @section('content')
-<div class="max-w-2xl mx-auto px-8 py-10">
+<div class="max-w-3xl mx-auto px-8 py-10">
 
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-[#0d1c2f]">Mon profil</h1>
@@ -77,8 +77,10 @@
 
         <hr class="border-[#c2c6d4]/40">
 
-        <div class="space-y-4">
-            <div>
+        {{-- ── Identité ── --}}
+        <p class="text-xs font-bold text-[#526069] uppercase tracking-wider">Identité</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="sm:col-span-2">
                 <label for="name" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">
                     Nom complet <span class="text-red-500">*</span>
                 </label>
@@ -88,7 +90,7 @@
                 @error('name')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
 
-            <div>
+            <div class="sm:col-span-2">
                 <label for="email" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">
                     Adresse email <span class="text-red-500">*</span>
                 </label>
@@ -96,6 +98,105 @@
                        class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3 text-[#0d1c2f]
                               focus:outline-none focus:ring-2 focus:ring-[#003f87]/30 focus:border-[#003f87] transition-colors">
                 @error('email')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+            </div>
+
+            <div>
+                <label for="gender" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">Sexe</label>
+                <select id="gender" name="gender"
+                        class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3 text-[#0d1c2f]
+                               focus:outline-none focus:ring-2 focus:ring-[#003f87]/30 focus:border-[#003f87] transition-colors">
+                    <option value="">— Non renseigné —</option>
+                    <option value="male"   {{ old('gender', $user->gender) === 'male'   ? 'selected' : '' }}>Homme</option>
+                    <option value="female" {{ old('gender', $user->gender) === 'female' ? 'selected' : '' }}>Femme</option>
+                    <option value="other"  {{ old('gender', $user->gender) === 'other'  ? 'selected' : '' }}>Autre</option>
+                </select>
+                @error('gender')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+            </div>
+
+            <div>
+                <label for="birth_date" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">Date de naissance</label>
+                <input type="date" id="birth_date" name="birth_date"
+                       value="{{ old('birth_date', $user->birth_date?->format('Y-m-d')) }}"
+                       max="{{ now()->subDay()->format('Y-m-d') }}"
+                       class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3 text-[#0d1c2f]
+                              focus:outline-none focus:ring-2 focus:ring-[#003f87]/30 focus:border-[#003f87] transition-colors">
+                @error('birth_date')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+            </div>
+        </div>
+
+        <hr class="border-[#c2c6d4]/40">
+
+        {{-- ── Informations médicales ── --}}
+        <p class="text-xs font-bold text-[#526069] uppercase tracking-wider">Informations médicales</p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+                <label for="blood_type" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">Groupe sanguin</label>
+                <select id="blood_type" name="blood_type"
+                        class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3 text-[#0d1c2f]
+                               focus:outline-none focus:ring-2 focus:ring-[#003f87]/30 focus:border-[#003f87] transition-colors">
+                    <option value="">— Non renseigné —</option>
+                    @foreach(['A+','A-','B+','B-','AB+','AB-','O+','O-'] as $bt)
+                        <option value="{{ $bt }}" {{ old('blood_type', $user->blood_type) === $bt ? 'selected' : '' }}>{{ $bt }}</option>
+                    @endforeach
+                </select>
+                @error('blood_type')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+            </div>
+
+            <div>
+                <label for="weight" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">Poids (kg)</label>
+                <input type="number" id="weight" name="weight" step="0.1" min="1" max="500"
+                       value="{{ old('weight', $user->weight ? rtrim(rtrim($user->weight, '0'), '.') : '') }}"
+                       placeholder="ex : 70"
+                       class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3 text-[#0d1c2f]
+                              focus:outline-none focus:ring-2 focus:ring-[#003f87]/30 focus:border-[#003f87] transition-colors">
+                @error('weight')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+            </div>
+
+            <div>
+                <label for="height" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">Taille (cm)</label>
+                <input type="number" id="height" name="height" step="0.1" min="30" max="300"
+                       value="{{ old('height', $user->height ? rtrim(rtrim($user->height, '0'), '.') : '') }}"
+                       placeholder="ex : 175"
+                       class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3 text-[#0d1c2f]
+                              focus:outline-none focus:ring-2 focus:ring-[#003f87]/30 focus:border-[#003f87] transition-colors">
+                @error('height')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+            </div>
+        </div>
+
+        <hr class="border-[#c2c6d4]/40">
+
+        {{-- ── Coordonnées ── --}}
+        <p class="text-xs font-bold text-[#526069] uppercase tracking-wider">Coordonnées</p>
+        <div class="space-y-4">
+            <div>
+                <label for="phone" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">Téléphone</label>
+                <input type="tel" id="phone" name="phone" value="{{ old('phone', $user->phone) }}"
+                       placeholder="ex : 0612345678"
+                       class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3 text-[#0d1c2f]
+                              focus:outline-none focus:ring-2 focus:ring-[#003f87]/30 focus:border-[#003f87] transition-colors">
+                @error('phone')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+            </div>
+
+            <div>
+                <label for="address" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">Adresse</label>
+                <input type="text" id="address" name="address" value="{{ old('address', $user->address) }}"
+                       placeholder="ex : 12 rue de la Santé, Paris"
+                       class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3 text-[#0d1c2f]
+                              focus:outline-none focus:ring-2 focus:ring-[#003f87]/30 focus:border-[#003f87] transition-colors">
+                @error('address')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+            </div>
+
+            <div>
+                <label for="emergency_contact" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">
+                    Contact d'urgence
+                    <span class="text-xs font-normal text-[#526069]">(nom et téléphone)</span>
+                </label>
+                <input type="text" id="emergency_contact" name="emergency_contact"
+                       value="{{ old('emergency_contact', $user->emergency_contact) }}"
+                       placeholder="ex : Marie Dupont — 0698765432"
+                       class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3 text-[#0d1c2f]
+                              focus:outline-none focus:ring-2 focus:ring-[#003f87]/30 focus:border-[#003f87] transition-colors">
+                @error('emergency_contact')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
         </div>
 
