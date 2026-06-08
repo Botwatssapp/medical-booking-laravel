@@ -13,11 +13,21 @@
         </a>
     </div>
 
+    @php
+        $sortDir  = request('direction', 'asc');
+        $sortLink = request()->fullUrlWithQuery(['direction' => $sortDir === 'asc' ? 'desc' : 'asc', 'page' => 1]);
+        $sortIcon = $sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward';
+    @endphp
     <div class="bg-white rounded-2xl border border-[#e0e7ff] overflow-hidden">
         <table class="w-full">
             <thead class="bg-[#f8faff] border-b border-[#e0e7ff]">
                 <tr>
-                    <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">Spécialité</th>
+                    <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">
+                        <a href="{{ $sortLink }}" class="flex items-center gap-1 group text-[#003f87]">
+                            Spécialité
+                            <span class="material-symbols-outlined text-[13px]">{{ $sortIcon }}</span>
+                        </a>
+                    </th>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">Description</th>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">Actions</th>
                 </tr>

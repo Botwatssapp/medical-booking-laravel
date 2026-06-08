@@ -49,9 +49,13 @@
     </div>
 
     {{-- Créneaux disponibles --}}
+    @php
+        $availableCount = $availabilities->where('is_available', true)->count();
+    @endphp
+
     <h2 class="text-xl font-semibold text-[#0d1c2f] mb-4">
         Créneaux disponibles
-        <span class="text-sm font-normal text-[#526069] ml-2">({{ $availabilities->count() }} créneau(x))</span>
+        <span class="text-sm font-normal text-[#526069] ml-2">({{ $availableCount }} disponible(s) sur {{ $availabilities->count() }})</span>
     </h2>
 
     @if($availabilities->isEmpty())
@@ -76,7 +80,7 @@
                         <p class="font-semibold text-[#003f87]">
                             {{ \Carbon\Carbon::parse($date)->format('d/m/Y') }}
                             <span class="text-xs font-normal text-[#526069] ml-2">
-                                — {{ $slots->count() }} créneau(x)
+                                — {{ $slots->where('is_available', true)->count() }} disponible(s) / {{ $slots->count() }} créneau(x)
                             </span>
                         </p>
                     </div>
@@ -84,19 +88,39 @@
                     {{-- Grille des créneaux --}}
                     <div class="p-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                         @foreach($slots as $slot)
-                            <a href="{{ route('patient.appointments.create', ['availability_id' => $slot->id]) }}"
-                               class="flex flex-col items-center p-3 rounded-xl border border-[#003f87]/20 bg-[#f8f9ff]
-                                      hover:bg-[#003f87] hover:text-white hover:border-[#003f87] transition-all group text-center">
-                                <span class="material-symbols-outlined text-[#003f87] group-hover:text-white text-base mb-1">
-                                    schedule
-                                </span>
-                                <span class="text-sm font-bold text-[#0d1c2f] group-hover:text-white">
-                                    {{ substr($slot->start_time, 0, 5) }}
-                                </span>
-                                <span class="text-xs text-[#526069] group-hover:text-white/80">
-                                    – {{ substr($slot->end_time, 0, 5) }}
-                                </span>
-                            </a>
+                            @if($slot->is_available)
+                                {{-- Créneau disponible : cliquable --}}
+                                <a href="{{ route('patient.appointments.create', ['availability_id' => $slot->id]) }}"
+                                   class="flex flex-col items-center p-3 rounded-xl border border-[#003f87]/20 bg-[#f8f9ff]
+                                          hover:bg-[#003f87] hover:text-white hover:border-[#003f87] transition-all group text-center">
+                                    <span class="material-symbols-outlined text-[#003f87] group-hover:text-white text-base mb-1">
+                                        schedule
+                                    </span>
+                                    <span class="text-sm font-bold text-[#0d1c2f] group-hover:text-white">
+                                        {{ substr($slot->start_time, 0, 5) }}
+                                    </span>
+                                    <span class="text-xs text-[#526069] group-hover:text-white/80">
+                                        – {{ substr($slot->end_time, 0, 5) }}
+                                    </span>
+                                </a>
+                            @else
+                                {{-- Créneau réservé : désactivé --}}
+                                <div class="flex flex-col items-center p-3 rounded-xl border border-[#c2c6d4]/40 bg-[#f1f3f8]
+                                            cursor-not-allowed opacity-60 text-center" title="Créneau déjà réservé">
+                                    <span class="material-symbols-outlined text-[#c2c6d4] text-base mb-1">
+                                        event_busy
+                                    </span>
+                                    <span class="text-sm font-bold text-[#9aa0b0] line-through">
+                                        {{ substr($slot->start_time, 0, 5) }}
+                                    </span>
+                                    <span class="text-xs text-[#9aa0b0] line-through">
+                                        – {{ substr($slot->end_time, 0, 5) }}
+                                    </span>
+                                    <span class="text-[10px] text-[#c2c6d4] mt-1 font-medium uppercase tracking-wide">
+                                        Réservé
+                                    </span>
+                                </div>
+                            @endif
                         @endforeach
                     </div>
                 </div>

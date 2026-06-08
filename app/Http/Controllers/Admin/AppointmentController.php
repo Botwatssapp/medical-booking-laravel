@@ -30,7 +30,11 @@ class AppointmentController extends Controller
                   ->orWhereHas('doctor.user', fn($q) => $q->where('name', 'like', "%$search%"));
         }
 
-        $appointments = $query->orderBy('appointment_date', 'desc')->paginate(15)->withQueryString();
+        $allowedSorts = ['appointment_date', 'status'];
+        $sort      = in_array($request->query('sort'), $allowedSorts) ? $request->query('sort') : 'appointment_date';
+        $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
+
+        $appointments = $query->orderBy($sort, $direction)->paginate(15)->withQueryString();
 
         $stats = [
             'total'     => Appointment::count(),

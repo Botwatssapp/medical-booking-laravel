@@ -22,14 +22,19 @@ class AvailabilityController extends Controller
      *
      * @return View
      */
-    public function index(): View
+    public function index(Request $request): View
     {
         $doctor = auth()->user()->doctor;
 
-        $availabilities = $doctor->availabilities()
-            ->orderBy('date')
-            ->orderBy('start_time')
-            ->paginate(20);
+        $allowedSorts = ['date', 'is_available'];
+        $sort         = in_array($request->query('sort'), $allowedSorts) ? $request->query('sort') : 'date';
+        $direction    = $request->query('direction') === 'desc' ? 'desc' : 'asc';
+
+        $availQuery = $doctor->availabilities()->orderBy($sort, $direction);
+        if ($sort === 'date') {
+            $availQuery->orderBy('start_time', $direction);
+        }
+        $availabilities = $availQuery->paginate(20)->withQueryString();
 
         $stats = [
             'total'     => $doctor->availabilities()->count(),

@@ -27,11 +27,20 @@ class DoctorController extends Controller
      *
      * @return View
      */
-    public function index(): View
+    public function index(\Illuminate\Http\Request $request): View
     {
+        $allowedSorts = ['name' => 'users.name', 'speciality' => 'specialities.name'];
+        $sortKey   = $request->query('sort', 'name');
+        $sort      = $allowedSorts[$sortKey] ?? 'users.name';
+        $direction = $request->query('direction') === 'desc' ? 'desc' : 'asc';
+
         $doctors = Doctor::with(['user', 'speciality'])
-            ->orderBy('id', 'desc')
-            ->paginate(15);
+            ->join('users', 'users.id', '=', 'doctors.user_id')
+            ->join('specialities', 'specialities.id', '=', 'doctors.speciality_id')
+            ->select('doctors.*')
+            ->orderBy($sort, $direction)
+            ->paginate(15)
+            ->withQueryString();
 
         return view('admin.doctors.index', compact('doctors'));
     }

@@ -31,7 +31,7 @@ class DoctorController extends Controller
         $query = Doctor::with(['speciality', 'user']);
 
         if ($request->filled('specialty_id')) {
-            $query->where('speciality_id', $request->integer('specialty_id'));
+            $query->where('doctors.speciality_id', $request->integer('specialty_id'));
         }
 
         if ($request->filled('search')) {
@@ -42,7 +42,17 @@ class DoctorController extends Controller
             });
         }
 
-        $doctors    = $query->paginate(12);
+        $allowedSorts = ['name' => 'users.name', 'speciality' => 'specialities.name'];
+        $sortKey      = $request->query('sort', 'name');
+        $sort         = $allowedSorts[$sortKey] ?? 'users.name';
+        $direction    = $request->query('direction') === 'desc' ? 'desc' : 'asc';
+
+        $query->join('users', 'users.id', '=', 'doctors.user_id')
+              ->join('specialities', 'specialities.id', '=', 'doctors.speciality_id')
+              ->select('doctors.*')
+              ->orderBy($sort, $direction);
+
+        $doctors     = $query->paginate(12)->withQueryString();
         $specialties = Speciality::orderBy('name')->get();
 
         return view('patient.doctors.index', compact('doctors', 'specialties'));
@@ -61,9 +71,9 @@ class DoctorController extends Controller
     {
         $doctor->load(['speciality', 'user']);
 
-        // Charge uniquement les créneaux disponibles et futurs
+        // Charge tous les créneaux futurs (disponibles ET réservés)
         $availabilities = $doctor->availabilities()
-            ->available()
+            ->where('date', '>=', now()->toDateString())
             ->orderBy('date')
             ->orderBy('start_time')
             ->get();

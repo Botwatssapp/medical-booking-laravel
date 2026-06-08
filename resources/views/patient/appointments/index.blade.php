@@ -17,7 +17,7 @@
         </a>
     </div>
 
-    {{-- Filtres rapides --}}
+    {{-- Filtres rapides + Tri --}}
     @php
         $statusFilters = [
             ['val' => '',          'label' => 'Tous'],
@@ -27,17 +27,31 @@
             ['val' => 'cancelled', 'label' => 'Annulés'],
         ];
         $currentStatus = request('status', '');
+        $currentDir    = request('direction', 'desc');
     @endphp
-    <div class="flex flex-wrap gap-2 mb-6">
-        @foreach($statusFilters as $f)
-            <a href="{{ route('patient.appointments.index', $f['val'] ? ['status' => $f['val']] : []) }}"
-               class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors
-                      {{ $currentStatus === $f['val']
-                            ? 'bg-[#0d1c2f] text-white border-[#0d1c2f]'
-                            : 'bg-white border-[#c2c6d4] text-[#526069] hover:border-[#003f87] hover:text-[#003f87]' }}">
-                {{ $f['label'] }}
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div class="flex flex-wrap gap-2">
+            @foreach($statusFilters as $f)
+                <a href="{{ route('patient.appointments.index', array_filter(['status' => $f['val'], 'direction' => $currentDir])) }}"
+                   class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors
+                          {{ $currentStatus === $f['val']
+                                ? 'bg-[#0d1c2f] text-white border-[#0d1c2f]'
+                                : 'bg-white border-[#c2c6d4] text-[#526069] hover:border-[#003f87] hover:text-[#003f87]' }}">
+                    {{ $f['label'] }}
+                </a>
+            @endforeach
+        </div>
+        <div class="flex items-center gap-2 text-sm text-[#526069]">
+            <span class="material-symbols-outlined text-[16px]">sort</span>
+            <a href="{{ request()->fullUrlWithQuery(['direction' => 'desc', 'page' => 1]) }}"
+               class="px-3 py-1.5 rounded-lg border transition-colors {{ $currentDir === 'desc' ? 'bg-[#003f87] text-white border-[#003f87]' : 'bg-white border-[#c2c6d4] hover:border-[#003f87] hover:text-[#003f87]' }}">
+                Récent d'abord
             </a>
-        @endforeach
+            <a href="{{ request()->fullUrlWithQuery(['direction' => 'asc', 'page' => 1]) }}"
+               class="px-3 py-1.5 rounded-lg border transition-colors {{ $currentDir === 'asc' ? 'bg-[#003f87] text-white border-[#003f87]' : 'bg-white border-[#c2c6d4] hover:border-[#003f87] hover:text-[#003f87]' }}">
+                Ancien d'abord
+            </a>
+        </div>
     </div>
 
     {{-- Liste des rendez-vous --}}

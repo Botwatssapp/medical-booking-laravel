@@ -39,6 +39,14 @@ class User extends Authenticatable
         'password',
         'role',
         'profile_image',
+        'phone',
+        'gender',
+        'birth_date',
+        'blood_type',
+        'weight',
+        'height',
+        'address',
+        'emergency_contact',
     ];
 
     /**
@@ -61,6 +69,9 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
+            'birth_date'        => 'date',
+            'weight'            => 'decimal:2',
+            'height'            => 'decimal:2',
         ];
     }
 
@@ -77,6 +88,21 @@ class User extends Authenticatable
         return $this->profile_image
             ? Storage::disk('public')->url($this->profile_image)
             : null;
+    }
+
+    public function getAgeAttribute(): ?int
+    {
+        return $this->birth_date ? $this->birth_date->age : null;
+    }
+
+    public function getGenderLabelAttribute(): ?string
+    {
+        return match($this->gender) {
+            'male'   => 'Homme',
+            'female' => 'Femme',
+            'other'  => 'Autre',
+            default  => null,
+        };
     }
 
     // =========================================================================
