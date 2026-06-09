@@ -1,0 +1,6 @@
+projectKey=medical-booking-system
+serverUrl=http://localhost:9000
+serverVersion=25.10.0.114319
+dashboardUrl=http://localhost:9000/dashboard?id=medical-booking-system
+ceTaskId=828f1afd-2fbe-4e4e-9cfd-31796a9d4a78
+ceTaskUrl=http://localhost:9000/api/ce/task?id=828f1afd-2fbe-4e4e-9cfd-31796a9d4a78
