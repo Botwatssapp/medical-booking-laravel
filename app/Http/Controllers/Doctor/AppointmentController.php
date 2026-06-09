@@ -89,9 +89,13 @@ class AppointmentController extends Controller
             return back()->with('error', 'Seuls les rendez-vous confirmés peuvent être reportés.');
         }
 
+        // Charger l'ancien créneau avant la transaction pour construire le filtre "après"
+        $appointment->load('availability');
+        $oldSlot = $appointment->availability;
+
         $newAppointment = null;
 
-        DB::transaction(function () use ($appointment, &$newAppointment) {
+        DB::transaction(function () use ($appointment, $oldSlot, &$newAppointment) {
             // 1 — Libérer l'ancien créneau
             if ($appointment->availability_id) {
                 Availability::where('id', $appointment->availability_id)
@@ -103,14 +107,25 @@ class AppointmentController extends Controller
             // 2 — Annuler l'ancien rendez-vous
             $appointment->update(['status' => Appointment::STATUS_CANCELLED]);
 
-            // 3 — Chercher le prochain créneau libre du même médecin
-            $nextSlot = Availability::where('doctor_id', $appointment->doctor_id)
+            // 3 — Chercher le prochain créneau libre STRICTEMENT après l'ancien créneau
+            //     pour éviter de re-sélectionner le créneau qui vient d'être libéré.
+            $query = Availability::where('doctor_id', $appointment->doctor_id)
                 ->where('is_available', true)
-                ->where('date', '>=', now()->toDateString())
-                ->orderBy('date')
-                ->orderBy('start_time')
-                ->lockForUpdate()
-                ->first();
+                ->where('date', '>=', now()->toDateString());
+
+            if ($oldSlot) {
+                $slotDate = $oldSlot->date->format('Y-m-d');
+                $slotTime = $oldSlot->start_time;
+                $query->where(function ($q) use ($slotDate, $slotTime) {
+                    $q->where('date', '>', $slotDate)
+                      ->orWhere(function ($q2) use ($slotDate, $slotTime) {
+                          $q2->where('date', $slotDate)
+                             ->where('start_time', '>', $slotTime);
+                      });
+                });
+            }
+
+            $nextSlot = $query->orderBy('date')->orderBy('start_time')->lockForUpdate()->first();
 
             if (!$nextSlot) {
                 return; // Pas de créneau → juste annulation
