@@ -33,14 +33,21 @@
                     <span class="label">Médecin</span>
                     <span class="value">Dr. {{ $appointment->doctor->user->name }}</span>
                 </div>
-                <div class="info-row">
-                    <span class="label">Date</span>
-                    <span class="value">{{ date('d/m/Y', strtotime($appointment->date)) }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Heure</span>
-                    <span class="value">{{ $appointment->time_slot }}</span>
-                </div>
+            <div class="info-row">
+                <span class="label">Date</span>
+                <span class="value">{{ $appointment->appointment_date->format('d/m/Y') }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Heure</span>
+                <span class="value">
+                    @if($appointment->availability)
+                        {{ substr($appointment->availability->start_time, 0, 5) }}
+                        – {{ substr($appointment->availability->end_time, 0, 5) }}
+                    @else
+                        {{ $appointment->appointment_date->format('H:i') }}
+                    @endif
+                </span>
+            </div>
             </div>
 
             <p style="color: #424752; font-size: 14px;">Nous vous invitons à prendre rendez-vous avec un autre praticien disponible.</p>

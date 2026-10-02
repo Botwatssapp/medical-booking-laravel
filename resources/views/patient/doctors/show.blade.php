@@ -2,22 +2,26 @@
 @section('title', 'Dr. '.$doctor->user->name)
 
 @section('content')
-<div class="max-w-4xl mx-auto px-8 py-10">
+<div class="max-w-4xl mx-auto px-4 sm:px-8 py-8 sm:py-10">
 
     <a href="{{ route('patient.doctors.index') }}"
        class="text-[#003f87] hover:underline text-sm mb-6 inline-flex items-center gap-1">
-        <span class="material-symbols-outlined text-sm">arrow_back</span> Retour à la liste
+        <span class="material-symbols-outlined text-sm" aria-hidden="true">arrow_back</span>
+        Retour à l'annuaire
     </a>
 
-    {{-- Profil médecin --}}
-    <div class="bg-white rounded-xl border border-[#c2c6d4]/30 shadow-sm p-8 mb-8">
+    <div class="bg-white rounded-xl border border-[#c2c6d4]/30 shadow-sm p-6 sm:p-8 mb-8">
         <div class="flex flex-col sm:flex-row gap-8 items-start">
             @if($doctor->photo)
                 <img src="{{ asset('storage/'.$doctor->photo) }}"
-                     alt="{{ $doctor->user->name }}"
+                     alt="Photo de Dr. {{ $doctor->user->name }}"
+                     class="w-32 h-32 rounded-xl object-cover shrink-0">
+            @elseif($doctor->user->profile_image_url)
+                <img src="{{ $doctor->user->profile_image_url }}"
+                     alt="Photo de Dr. {{ $doctor->user->name }}"
                      class="w-32 h-32 rounded-xl object-cover shrink-0">
             @else
-                <div class="w-32 h-32 rounded-xl bg-[#eff4ff] text-[#003f87] flex items-center justify-center text-4xl font-bold shrink-0">
+                <div class="w-32 h-32 rounded-xl bg-[#eff4ff] text-[#003f87] flex items-center justify-center text-4xl font-bold shrink-0" aria-hidden="true">
                     {{ strtoupper(substr($doctor->user->name, 0, 1)) }}
                 </div>
             @endif
@@ -30,70 +34,69 @@
                     <p class="text-[#424752] mt-4 text-sm leading-relaxed">{{ $doctor->bio }}</p>
                 @endif
 
-                <div class="mt-4 flex flex-wrap gap-6 text-sm text-[#526069]">
+                <div class="mt-4 space-y-2 text-sm text-[#526069]">
                     @if($doctor->phone)
-                        <span class="flex items-center gap-1">
-                            <span class="material-symbols-outlined text-sm">phone</span>
+                        <p class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm text-[#003f87]" aria-hidden="true">phone</span>
                             {{ $doctor->phone }}
-                        </span>
+                        </p>
                     @endif
                     @if($doctor->address)
-                        <span class="flex items-center gap-1">
-                            <span class="material-symbols-outlined text-sm">location_on</span>
+                        <p class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-sm text-[#003f87]" aria-hidden="true">location_on</span>
                             {{ $doctor->address }}
-                        </span>
+                        </p>
                     @endif
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Créneaux disponibles --}}
     @php
-        $availableCount = $availabilities->where('is_available', true)->count();
+        $bookable = $availabilities->where('is_available', true);
     @endphp
 
     <h2 class="text-xl font-semibold text-[#0d1c2f] mb-4">
         Créneaux disponibles
-        <span class="text-sm font-normal text-[#526069] ml-2">({{ $availableCount }} disponible(s) sur {{ $availabilities->count() }})</span>
+        <span class="block sm:inline text-sm font-normal text-[#526069] sm:ml-2">
+            {{ $bookable->count() }} libre(s)
+        </span>
     </h2>
 
-    @if($availabilities->isEmpty())
+    @if($bookable->isEmpty())
         <div class="bg-white rounded-xl border border-[#c2c6d4]/30 shadow-sm p-10 text-center text-[#424752]">
-            <span class="material-symbols-outlined text-5xl text-[#c2c6d4] block mb-3">event_busy</span>
-            <p class="font-medium">Ce médecin n'a aucun créneau disponible pour le moment.</p>
+            <span class="material-symbols-outlined text-5xl text-[#c2c6d4] block mb-3" aria-hidden="true">event_busy</span>
+            <p class="font-medium text-[#0d1c2f]">Aucun créneau libre pour le moment</p>
+            <p class="text-sm text-[#526069] mt-1">Ce médecin n’a pas de disponibilité future réservable.</p>
             <a href="{{ route('patient.doctors.index') }}" class="mt-4 inline-block text-[#003f87] hover:underline text-sm">
                 Consulter d'autres médecins
             </a>
         </div>
     @else
-        {{-- Grouper par date --}}
         @php
-            $grouped = $availabilities->groupBy(fn($a) => $a->date->format('Y-m-d'));
+            $grouped = $availabilities->groupBy(fn ($a) => $a->date->format('Y-m-d'));
         @endphp
 
         <div class="space-y-6">
             @foreach($grouped as $date => $slots)
                 <div class="bg-white rounded-xl border border-[#c2c6d4]/30 shadow-sm overflow-hidden">
-                    {{-- En-tête de la date --}}
-                    <div class="bg-[#eff4ff] px-6 py-3 border-b border-[#c2c6d4]/30">
+                    <div class="bg-[#eff4ff] px-4 sm:px-6 py-3 border-b border-[#c2c6d4]/30">
                         <p class="font-semibold text-[#003f87]">
-                            {{ \Carbon\Carbon::parse($date)->format('d/m/Y') }}
+                            {{ \Carbon\Carbon::parse($date)->translatedFormat('l j F Y') }}
                             <span class="text-xs font-normal text-[#526069] ml-2">
-                                — {{ $slots->where('is_available', true)->count() }} disponible(s) / {{ $slots->count() }} créneau(x)
+                                {{ $slots->where('is_available', true)->count() }} libre(s)
                             </span>
                         </p>
                     </div>
 
-                    {{-- Grille des créneaux --}}
-                    <div class="p-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    <div class="p-4 sm:p-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                         @foreach($slots as $slot)
                             @if($slot->is_available)
-                                {{-- Créneau disponible : cliquable --}}
                                 <a href="{{ route('patient.appointments.create', ['availability_id' => $slot->id]) }}"
                                    class="flex flex-col items-center p-3 rounded-xl border border-[#003f87]/20 bg-[#f8f9ff]
-                                          hover:bg-[#003f87] hover:text-white hover:border-[#003f87] transition-all group text-center">
-                                    <span class="material-symbols-outlined text-[#003f87] group-hover:text-white text-base mb-1">
+                                          hover:bg-[#003f87] hover:text-white hover:border-[#003f87] transition-all group text-center"
+                                   aria-label="Réserver le {{ $slot->date->format('d/m/Y') }} de {{ substr($slot->start_time, 0, 5) }} à {{ substr($slot->end_time, 0, 5) }}">
+                                    <span class="material-symbols-outlined text-[#003f87] group-hover:text-white text-base mb-1" aria-hidden="true">
                                         schedule
                                     </span>
                                     <span class="text-sm font-bold text-[#0d1c2f] group-hover:text-white">
@@ -104,10 +107,11 @@
                                     </span>
                                 </a>
                             @else
-                                {{-- Créneau réservé : désactivé --}}
                                 <div class="flex flex-col items-center p-3 rounded-xl border border-[#c2c6d4]/40 bg-[#f1f3f8]
-                                            cursor-not-allowed opacity-60 text-center" title="Créneau déjà réservé">
-                                    <span class="material-symbols-outlined text-[#c2c6d4] text-base mb-1">
+                                            opacity-60 text-center"
+                                     aria-disabled="true"
+                                     aria-label="Créneau {{ substr($slot->start_time, 0, 5) }} déjà réservé">
+                                    <span class="material-symbols-outlined text-[#c2c6d4] text-base mb-1" aria-hidden="true">
                                         event_busy
                                     </span>
                                     <span class="text-sm font-bold text-[#9aa0b0] line-through">
@@ -116,7 +120,7 @@
                                     <span class="text-xs text-[#9aa0b0] line-through">
                                         – {{ substr($slot->end_time, 0, 5) }}
                                     </span>
-                                    <span class="text-[10px] text-[#c2c6d4] mt-1 font-medium uppercase tracking-wide">
+                                    <span class="text-[10px] text-[#526069] mt-1 font-medium uppercase tracking-wide">
                                         Réservé
                                     </span>
                                 </div>

@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Database\Factories\AppointmentFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,12 +16,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * Un rendez-vous lie un patient à un médecin sur un créneau de disponibilité.
  * Le statut évolue : pending → accepted/rejected → completed/missed/cancelled.
  *
- * @property int         $id
- * @property int         $patient_id
- * @property int         $doctor_id
- * @property int|null    $availability_id
- * @property \Carbon\Carbon $appointment_date
- * @property string      $status
+ * @property int $id
+ * @property int $patient_id
+ * @property int $doctor_id
+ * @property int|null $availability_id
+ * @property Carbon $appointment_date
+ * @property string $status
  * @property string|null $notes
  */
 class Appointment extends Model
@@ -30,12 +32,31 @@ class Appointment extends Model
     /**
      * Statuts possibles d'un rendez-vous.
      */
-    public const STATUS_PENDING   = 'pending';
-    public const STATUS_ACCEPTED  = 'accepted';
-    public const STATUS_REJECTED  = 'rejected';
+    public const STATUS_PENDING = 'pending';
+
+    public const STATUS_ACCEPTED = 'accepted';
+
+    public const STATUS_REJECTED = 'rejected';
+
     public const STATUS_CANCELLED = 'cancelled';
+
     public const STATUS_COMPLETED = 'completed';
-    public const STATUS_MISSED    = 'missed';
+
+    public const STATUS_MISSED = 'missed';
+
+    /**
+     * Statuts qui occupent encore le créneau de disponibilité.
+     *
+     * `cancelled` et `rejected` sont les seuls statuts qui libèrent le slot.
+     *
+     * @var list<string>
+     */
+    public const OCCUPYING_STATUSES = [
+        self::STATUS_PENDING,
+        self::STATUS_ACCEPTED,
+        self::STATUS_COMPLETED,
+        self::STATUS_MISSED,
+    ];
 
     /**
      * Attributs assignables en masse.
@@ -49,6 +70,15 @@ class Appointment extends Model
         'appointment_date',
         'status',
         'notes',
+    ];
+
+    /**
+     * Colonne générée d'intégrité SQL — pas un champ métier.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'occupying_availability_id',
     ];
 
     /**
@@ -109,8 +139,8 @@ class Appointment extends Model
     /**
      * Filtre les rendez-vous en attente de confirmation.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static> $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopePending($query)
     {
@@ -120,8 +150,8 @@ class Appointment extends Model
     /**
      * Filtre les rendez-vous acceptés.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static> $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeAccepted($query)
     {
@@ -131,8 +161,8 @@ class Appointment extends Model
     /**
      * Filtre les rendez-vous rejetés.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static> $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeRejected($query)
     {
@@ -142,8 +172,8 @@ class Appointment extends Model
     /**
      * Filtre les rendez-vous annulés.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static> $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeCancelled($query)
     {
@@ -153,8 +183,8 @@ class Appointment extends Model
     /**
      * Filtre les rendez-vous terminés.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static> $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeCompleted($query)
     {
@@ -164,8 +194,8 @@ class Appointment extends Model
     /**
      * Filtre les rendez-vous manqués.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static> $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeMissed($query)
     {
@@ -179,8 +209,8 @@ class Appointment extends Model
     /**
      * Filtre les rendez-vous futurs (après maintenant).
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static> $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeUpcoming($query)
     {
@@ -190,8 +220,8 @@ class Appointment extends Model
     /**
      * Filtre les rendez-vous passés (avant maintenant).
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static> $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopePast($query)
     {

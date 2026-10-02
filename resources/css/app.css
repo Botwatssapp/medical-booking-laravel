@@ -1,3 +1,104 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    :root {
+        --sc-navy: #003f87;
+        --sc-ink: #0d1c2f;
+        --sc-muted: #526069;
+        --sc-line: #e0e7ff;
+        --sc-canvas: #f8f9ff;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        @apply antialiased text-[#0d1c2f] bg-[#f8f9ff];
+    }
+
+    :focus-visible {
+        @apply outline-none ring-2 ring-[#003f87]/40 ring-offset-2;
+    }
+}
+
+@layer components {
+    .sc-page {
+        @apply max-w-[1200px] mx-auto px-4 sm:px-8 py-8 sm:py-10;
+    }
+
+    .sc-page-wide {
+        @apply max-w-[1440px] mx-auto px-4 sm:px-8;
+    }
+
+    .sc-heading {
+        @apply text-2xl sm:text-3xl font-bold text-[#0d1c2f] tracking-tight;
+    }
+
+    .sc-subheading {
+        @apply text-lg font-bold text-[#0d1c2f];
+    }
+
+    .sc-lede {
+        @apply text-[#526069] mt-1 text-sm sm:text-base;
+    }
+
+    .sc-label {
+        @apply block text-sm font-semibold text-[#0d1c2f] mb-1.5;
+    }
+
+    .sc-helper {
+        @apply text-xs text-[#526069] mt-1;
+    }
+
+    .sc-error-text {
+        @apply text-red-700 text-sm mt-1;
+    }
+
+    .sc-card {
+        @apply bg-white rounded-2xl border border-[#e0e7ff] shadow-sm;
+    }
+
+    .sc-btn,
+    .sc-btn-primary,
+    .sc-btn-secondary,
+    .sc-btn-danger {
+        @apply inline-flex items-center justify-center gap-2 min-h-11 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003f87]/40 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+
+    .sc-btn-primary {
+        @apply bg-[#003f87] text-white hover:bg-[#002d6b];
+    }
+
+    .sc-btn-secondary {
+        @apply border border-[#c2c6d4] bg-white text-[#526069] hover:border-[#003f87] hover:text-[#003f87];
+    }
+
+    .sc-btn-danger {
+        @apply border border-red-200 bg-red-50 text-red-700 hover:bg-red-100;
+    }
+
+    .sc-input,
+    .sc-select,
+    .sc-textarea {
+        @apply w-full border border-[#c2c6d4] rounded-xl px-4 py-3 text-sm text-[#0d1c2f] bg-white placeholder:text-[#8a93a0] focus:outline-none focus:ring-2 focus:ring-[#003f87]/30 focus:border-[#003f87] disabled:bg-[#f8faff] disabled:text-[#526069];
+    }
+
+    .sc-table-wrap {
+        @apply overflow-x-auto -mx-4 sm:mx-0;
+    }
+
+    .sc-nav-link {
+        @apply px-3 py-2 rounded-xl text-sm font-medium text-[#526069] hover:bg-[#f8faff] hover:text-[#003f87] transition-colors;
+    }
+
+    .sc-nav-link-active {
+        @apply px-3 py-2 rounded-xl text-sm font-semibold bg-[#eff4ff] text-[#003f87];
+    }
+
+    .sc-skip-link {
+        @apply sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[80] focus:px-4 focus:py-2 focus:bg-white focus:text-[#003f87] focus:rounded-xl focus:shadow-lg focus:font-semibold;
+    }
+}

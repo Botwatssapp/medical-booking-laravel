@@ -2,36 +2,35 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exceptions\DoctorException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreDoctorRequest;
 use App\Http\Requests\UpdateDoctorRequest;
 use App\Models\Doctor;
 use App\Models\Speciality;
 use App\Models\User;
+use App\Services\DoctorOnboardingService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 /**
  * Contrôleur de gestion des médecins côté administrateur.
  *
- * Permet à l'administrateur de lister, créer, modifier et supprimer
- * les profils médecins avec leurs informations personnelles.
+ * La création d'un profil `doctors` confirme un compte médecin inscrit.
  */
 class DoctorController extends Controller
 {
-    /**
-     * Affiche la liste paginée des médecins avec leur spécialité.
-     *
-     * Utilise l'eager loading pour éviter les requêtes N+1.
-     *
-     * @return View
-     */
-    public function index(\Illuminate\Http\Request $request): View
+    public function __construct(private readonly DoctorOnboardingService $onboarding) {}
+
+    public function index(Request $request): View
     {
+        $this->authorize('viewAny', Doctor::class);
+
         $allowedSorts = ['name' => 'users.name', 'speciality' => 'specialities.name'];
-        $sortKey   = $request->query('sort', 'name');
-        $sort      = $allowedSorts[$sortKey] ?? 'users.name';
+        $sortKey = $request->query('sort', 'name');
+        $sort = $allowedSorts[$sortKey] ?? 'users.name';
         $direction = $request->query('direction') === 'desc' ? 'desc' : 'asc';
 
         $doctors = Doctor::with(['user', 'speciality'])
@@ -42,104 +41,95 @@ class DoctorController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('admin.doctors.index', compact('doctors'));
+        $pendingDoctors = User::doctors()
+            ->doesntHave('doctor')
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('admin.doctors.index', compact('doctors', 'pendingDoctors'));
     }
 
-    /**
-     * Affiche le formulaire de création d'un médecin.
-     *
-     * Ne liste que les utilisateurs de rôle 'doctor' sans profil existant.
-     *
-     * @return View
-     */
     public function create(): View
     {
-        $users      = User::doctors()->doesntHave('doctor')->orderBy('name')->get();
+        $this->authorize('create', Doctor::class);
+
+        $users = User::doctors()->doesntHave('doctor')->orderBy('name')->get();
         $specialties = Speciality::orderBy('name')->get();
 
         return view('admin.doctors.create', compact('users', 'specialties'));
     }
 
-    /**
-     * Enregistre un nouveau profil médecin.
-     *
-     * Gère l'upload de photo et la création du profil.
-     *
-     * @param  StoreDoctorRequest $request
-     * @return RedirectResponse
-     */
     public function store(StoreDoctorRequest $request): RedirectResponse
     {
+        $this->authorize('create', Doctor::class);
+
         $data = $request->validated();
+        $photoPath = null;
 
         if ($request->hasFile('photo')) {
-            $data['photo'] = $request->file('photo')->store('doctors', 'public');
+            $photoPath = $request->file('photo')->store('doctors', 'public');
         }
 
-        Doctor::create($data);
+        try {
+            $this->onboarding->createProfile(
+                User::query()->findOrFail((int) $data['user_id']),
+                (int) $data['speciality_id'],
+                [
+                    'phone' => $data['phone'] ?? null,
+                    'address' => $data['address'] ?? null,
+                    'bio' => $data['bio'] ?? null,
+                    'photo' => $photoPath,
+                ],
+            );
+        } catch (DoctorException $e) {
+            if ($photoPath) {
+                Storage::disk('public')->delete($photoPath);
+            }
+
+            return back()->withErrors(['user_id' => $e->getMessage()])->withInput();
+        }
 
         return redirect()->route('admin.doctors.index')
             ->with('success', 'Médecin créé avec succès.');
     }
 
-    /**
-     * Affiche le formulaire de modification d'un médecin.
-     *
-     * Inclut dans la liste des utilisateurs le propriétaire actuel du profil.
-     *
-     * @param  Doctor $doctor
-     * @return View
-     */
     public function edit(Doctor $doctor): View
     {
-        $users = User::doctors()
-            ->where(function ($q) use ($doctor) {
-                $q->doesntHave('doctor')
-                  ->orWhereHas('doctor', fn ($q2) => $q2->where('id', $doctor->id));
-            })
-            ->orderBy('name')
-            ->get();
+        $this->authorize('update', $doctor);
 
+        $doctor->load(['user', 'speciality']);
         $specialties = Speciality::orderBy('name')->get();
 
-        return view('admin.doctors.edit', compact('doctor', 'users', 'specialties'));
+        return view('admin.doctors.edit', compact('doctor', 'specialties'));
     }
 
-    /**
-     * Met à jour le profil d'un médecin.
-     *
-     * Supprime l'ancienne photo du storage avant d'enregistrer la nouvelle.
-     *
-     * @param  UpdateDoctorRequest $request
-     * @param  Doctor              $doctor
-     * @return RedirectResponse
-     */
     public function update(UpdateDoctorRequest $request, Doctor $doctor): RedirectResponse
     {
+        $this->authorize('update', $doctor);
+
         $data = $request->validated();
 
         if ($request->hasFile('photo')) {
-            // Suppression de l'ancienne photo pour éviter les fichiers orphelins
             if ($doctor->photo) {
                 Storage::disk('public')->delete($doctor->photo);
             }
             $data['photo'] = $request->file('photo')->store('doctors', 'public');
         }
 
-        $doctor->update($data);
+        try {
+            $this->onboarding->updateByAdmin($doctor, $data);
+        } catch (DoctorException $e) {
+            return back()->withErrors(['speciality_id' => $e->getMessage()])->withInput();
+        }
 
         return redirect()->route('admin.doctors.index')
             ->with('success', 'Médecin mis à jour avec succès.');
     }
 
-    /**
-     * Supprime (soft-delete) un profil médecin.
-     *
-     * @param  Doctor $doctor
-     * @return RedirectResponse
-     */
     public function destroy(Doctor $doctor): RedirectResponse
     {
+        $this->authorize('delete', $doctor);
+
         $doctor->delete();
 
         return redirect()->route('admin.doctors.index')

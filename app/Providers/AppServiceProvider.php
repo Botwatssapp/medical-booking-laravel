@@ -3,7 +3,11 @@
 namespace App\Providers;
 
 use App\Models\Appointment;
+use App\Models\Availability;
+use App\Models\Doctor;
 use App\Policies\AppointmentPolicy;
+use App\Policies\AvailabilityPolicy;
+use App\Policies\DoctorPolicy;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
@@ -21,8 +25,6 @@ class AppServiceProvider extends ServiceProvider
 {
     /**
      * Enregistre les services de l'application.
-     *
-     * @return void
      */
     public function register(): void
     {
@@ -35,8 +37,6 @@ class AppServiceProvider extends ServiceProvider
      * - Configure la pagination avec Tailwind CSS.
      * - Enregistre les Policies via Gate::policy() (méthode recommandée
      *   dans Laravel 12 sans AuthServiceProvider dédié).
-     *
-     * @return void
      */
     public function boot(): void
     {
@@ -44,16 +44,14 @@ class AppServiceProvider extends ServiceProvider
 
         // Enregistrement des Policies d'autorisation
         Gate::policy(Appointment::class, AppointmentPolicy::class);
+        Gate::policy(Availability::class, AvailabilityPolicy::class);
+        Gate::policy(Doctor::class, DoctorPolicy::class);
 
         // Redirection du middleware 'guest' vers le bon tableau de bord selon le rôle.
         // Sans cette configuration, Laravel cherche route('dashboard') puis route('home').
         // Or route('home') = '/' qui affiche la page de login → boucle infinie.
         RedirectIfAuthenticated::redirectUsing(function (Request $request) {
-            return match (auth()->user()?->role) {
-                'admin'  => route('admin.dashboard'),
-                'doctor' => route('doctor.dashboard'),
-                default  => route('patient.dashboard'),
-            };
+            return $request->user()?->dashboardPath() ?? route('patient.dashboard');
         });
     }
 }

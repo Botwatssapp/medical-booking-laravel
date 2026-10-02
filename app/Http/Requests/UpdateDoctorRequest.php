@@ -5,46 +5,33 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Form Request pour la modification d'un profil médecin.
+ * Form Request pour la modification d'un profil médecin par l'administrateur.
  *
- * L'administrateur peut modifier tous les champs, y compris la spécialité.
- * Le médecin peut modifier ses informations personnelles (phone, address, bio, photo)
- * mais pas sa spécialité (réservée à l'administrateur).
+ * La spécialité est réservée à l'admin. Le médecin édite son profil
+ * via `UpdateDoctorProfileRequest` (sans spécialité, sans `user_id`).
  */
 class UpdateDoctorRequest extends FormRequest
 {
     /**
-     * Seuls les administrateurs et le médecin concerné peuvent modifier.
-     *
-     * @return bool
+     * Réservé à l'administrateur (route `admin.doctors.update`).
      */
     public function authorize(): bool
     {
-        return auth()->check() && (auth()->user()->isAdmin() || auth()->user()->isDoctor());
+        return auth()->check() && auth()->user()->isAdmin();
     }
 
     /**
-     * Règles de validation adaptées au rôle de l'utilisateur.
-     *
-     * Un médecin ne peut pas changer sa propre spécialité.
-     *
      * @return array<string, mixed>
      */
     public function rules(): array
     {
-        $rules = [
-            'phone'   => ['nullable', 'string', 'max:20'],
+        return [
+            'phone' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:255'],
-            'bio'     => ['nullable', 'string', 'max:1000'],
-            'photo'   => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'bio' => ['nullable', 'string', 'max:1000'],
+            'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'speciality_id' => ['nullable', 'exists:specialities,id'],
         ];
-
-        // Seul l'admin peut modifier la spécialité
-        if (auth()->user()->isAdmin()) {
-            $rules['speciality_id'] = ['nullable', 'exists:specialities,id'];
-        }
-
-        return $rules;
     }
 
     /**
@@ -56,9 +43,9 @@ class UpdateDoctorRequest extends FormRequest
     {
         return [
             'speciality_id.exists' => 'La spécialité sélectionnée n\'existe pas.',
-            'photo.image'          => 'Le fichier doit être une image.',
-            'photo.mimes'          => 'L\'image doit être au format JPEG, PNG, JPG ou GIF.',
-            'photo.max'            => 'L\'image ne doit pas dépasser 2 Mo.',
+            'photo.image' => 'Le fichier doit être une image.',
+            'photo.mimes' => 'L\'image doit être au format JPEG, PNG, JPG ou GIF.',
+            'photo.max' => 'L\'image ne doit pas dépasser 2 Mo.',
         ];
     }
 }

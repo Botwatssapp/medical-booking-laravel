@@ -1,35 +1,55 @@
 @extends('layouts.admin')
+@section('page-title', 'Modifier l’utilisateur')
+@section('page-subtitle', $user->email)
 
 @section('admin-content')
-<div class="max-w-2xl mx-auto">
-    <h2 class="text-3xl font-bold text-gray-900 mb-6">Éditer utilisateur</h2>
+<div class="max-w-2xl space-y-5">
 
-    <form method="POST" action="{{ route('admin.users.update', $user) }}" class="bg-white rounded-lg shadow p-6 space-y-4">
+    <a href="{{ route('admin.users.index') }}"
+       class="inline-flex items-center gap-1.5 text-sm text-[#526069] hover:text-[#003f87]">
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_back</span>
+        Retour aux utilisateurs
+    </a>
+
+    <form method="POST" action="{{ route('admin.users.update', $user) }}"
+          class="bg-white rounded-2xl border border-[#e0e7ff] shadow-sm p-6 space-y-4">
         @csrf
         @method('PUT')
 
         <div>
-            <label class="block text-sm font-medium text-gray-900">Nom</label>
-            <input type="text" name="name" value="{{ old('name', $user->name) }}" class="mt-1 w-full border rounded-lg px-4 py-2">
+            <label for="name" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">Nom</label>
+            <input type="text" id="name" name="name" value="{{ old('name', $user->name) }}" required
+                   class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3">
+            @error('name') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-900">Email</label>
-            <input type="email" name="email" value="{{ old('email', $user->email) }}" class="mt-1 w-full border rounded-lg px-4 py-2">
+            <label for="email" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">Email</label>
+            <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}" required
+                   class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3">
+            @error('email') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-900">Rôle</label>
-            <select name="role" class="mt-1 w-full border rounded-lg px-4 py-2">
-                <option value="patient" {{ $user->role === 'patient' ? 'selected' : '' }}>Patient</option>
-                <option value="doctor" {{ $user->role === 'doctor' ? 'selected' : '' }}>Médecin</option>
-                <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>Admin</option>
+            <label for="role" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">Rôle</label>
+            <select id="role" name="role" required class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3">
+                <option value="patient" {{ old('role', $user->role) === 'patient' ? 'selected' : '' }}>Patient</option>
+                <option value="doctor" {{ old('role', $user->role) === 'doctor' ? 'selected' : '' }}>Médecin</option>
+                <option value="admin" {{ old('role', $user->role) === 'admin' ? 'selected' : '' }}>Administrateur</option>
             </select>
+            @error('role') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
         </div>
 
-        <div class="flex gap-4">
-            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded">Mettre à jour</button>
-            <a href="{{ route('admin.users.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-900 px-6 py-2 rounded">Annuler</a>
+        <div>
+            <p class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">État du compte</p>
+            <p class="text-sm text-[#526069]">
+                {{ $user->email_verified_at ? 'Email vérifié le '.$user->email_verified_at->format('d/m/Y') : 'Email non vérifié' }}
+            </p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 pt-2">
+            <button type="submit" class="px-6 py-3 bg-[#003f87] text-white rounded-xl text-sm font-semibold">Enregistrer</button>
+            <a href="{{ route('admin.users.index') }}" class="px-6 py-3 border border-[#c2c6d4] rounded-xl text-sm font-semibold text-[#526069] text-center">Annuler</a>
         </div>
     </form>
 </div>

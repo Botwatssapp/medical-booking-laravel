@@ -2,27 +2,12 @@
 @section('title', 'Mon profil')
 
 @section('content')
-<div class="max-w-3xl mx-auto px-8 py-10">
+<div class="max-w-3xl mx-auto px-4 sm:px-8 py-8 sm:py-10">
 
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-[#0d1c2f]">Mon profil</h1>
         <p class="text-[#526069] mt-1">Modifiez vos informations personnelles.</p>
     </div>
-
-    @if(session('success'))
-        <div class="flex items-center gap-3 bg-green-50 border border-green-200 text-green-800 rounded-xl px-5 py-4 mb-6">
-            <span class="material-symbols-outlined text-green-600">check_circle</span>
-            <span>{{ session('success') }}</span>
-        </div>
-    @endif
-
-    @if($errors->any())
-        <div class="bg-red-50 border border-red-200 rounded-xl px-5 py-4 mb-6">
-            <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
-                @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
-            </ul>
-        </div>
-    @endif
 
     {{-- Formulaire suppression photo — hors du formulaire principal --}}
     @if($user->profile_image)

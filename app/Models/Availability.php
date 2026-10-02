@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\AvailabilityFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,12 +16,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * sur une date donnée. Le champ `is_available` indique si le créneau
  * peut encore être réservé.
  *
- * @property int    $id
- * @property int    $doctor_id
+ * @property int $id
+ * @property int $doctor_id
  * @property string $date
  * @property string $start_time
  * @property string $end_time
- * @property bool   $is_available
+ * @property bool $is_available
  */
 class Availability extends Model
 {
@@ -46,7 +47,7 @@ class Availability extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'date'         => 'date',
+        'date' => 'date',
         'is_available' => 'boolean',
     ];
 
@@ -65,15 +66,29 @@ class Availability extends Model
     }
 
     /**
-     * Rendez-vous liés à ce créneau de disponibilité.
+     * Historique des rendez-vous liés à ce créneau.
      *
-     * Un créneau peut être associé à un rendez-vous.
+     * HasMany volontaire : un même créneau peut avoir plusieurs rendez-vous
+     * successifs (rejeté, puis nouveau pending, etc.).
      *
      * @return HasMany<Appointment, $this>
      */
     public function appointments(): HasMany
     {
         return $this->hasMany(Appointment::class);
+    }
+
+    /**
+     * Rendez-vous qui occupent encore ce créneau.
+     *
+     * Statuts : pending, accepted, completed, missed
+     * (voir Appointment::OCCUPYING_STATUSES).
+     *
+     * @return HasMany<Appointment, $this>
+     */
+    public function occupyingAppointments(): HasMany
+    {
+        return $this->appointments()->whereIn('status', Appointment::OCCUPYING_STATUSES);
     }
 
     // =========================================================================
@@ -85,21 +100,20 @@ class Availability extends Model
      *
      * Correction : remplace `now()->date()` (inexistant) par `now()->toDateString()`.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static> $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeAvailable($query)
     {
         return $query->where('is_available', true)
-                     ->where('date', '>=', now()->toDateString());
+            ->where('date', '>=', now()->toDateString());
     }
 
     /**
      * Filtre les créneaux d'un médecin spécifique.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static> $query
-     * @param  int                                           $doctorId
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeByDoctor($query, int $doctorId)
     {
@@ -109,9 +123,8 @@ class Availability extends Model
     /**
      * Filtre les créneaux par date exacte.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static> $query
-     * @param  string                                        $date
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeByDate($query, string $date)
     {
@@ -121,10 +134,8 @@ class Availability extends Model
     /**
      * Filtre les créneaux dans une plage de dates.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static> $query
-     * @param  string                                        $startDate
-     * @param  string                                        $endDate
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeByDateRange($query, string $startDate, string $endDate)
     {

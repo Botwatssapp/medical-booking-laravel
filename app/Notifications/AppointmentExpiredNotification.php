@@ -13,7 +13,7 @@ class AppointmentExpiredNotification extends Notification
 
     public function __construct(
         public readonly Appointment $appointment,
-        public readonly string      $reason, // 'cancelled' | 'missed'
+        public readonly string $reason, // 'cancelled' | 'missed'
     ) {}
 
     public function via(object $_notifiable): array
@@ -29,28 +29,28 @@ class AppointmentExpiredNotification extends Notification
             : $this->appointment->appointment_date->format('H:i');
 
         if ($this->reason === 'missed') {
-            $title   = 'Rendez-vous manqué';
+            $title = 'Rendez-vous manqué';
             $message = "Votre rendez-vous du $date à $time avec Dr. {$this->appointment->doctor->user->name} a été marqué comme manqué.";
-            $icon    = 'running_with_errors';
-            $color   = 'orange';
+            $icon = 'running_with_errors';
+            $color = 'orange';
         } else {
-            $title   = 'Rendez-vous annulé automatiquement';
+            $title = 'Rendez-vous annulé automatiquement';
             $message = "Votre demande du $date à $time avec Dr. {$this->appointment->doctor->user->name} a expiré (non confirmée à temps).";
-            $icon    = 'event_busy';
-            $color   = 'red';
+            $icon = 'event_busy';
+            $color = 'red';
         }
 
         return [
-            'type'           => 'appointment_' . $this->reason,
-            'icon'           => $icon,
-            'color'          => $color,
-            'title'          => $title,
-            'message'        => $message,
-            'date'           => $date,
-            'time'           => $time,
-            'doctor_name'    => $this->appointment->doctor->user->name,
+            'type' => 'appointment_'.$this->reason,
+            'icon' => $icon,
+            'color' => $color,
+            'title' => $title,
+            'message' => $message,
+            'date' => $date,
+            'time' => $time,
+            'doctor_name' => $this->appointment->doctor->user->name,
             'appointment_id' => $this->appointment->id,
-            'url'            => route('patient.appointments.index'),
+            'url' => route('patient.appointments.index'),
         ];
     }
 

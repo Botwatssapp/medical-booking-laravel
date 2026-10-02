@@ -1,25 +1,36 @@
 @extends('layouts.admin')
+@section('page-title', 'Ajouter une spécialité')
+@section('page-subtitle', 'Référentiel utilisé pour classer les médecins')
 
 @section('admin-content')
-<div class="max-w-2xl mx-auto">
-    <h2 class="text-3xl font-bold text-gray-900 mb-6">Ajouter une spécialité</h2>
+<div class="max-w-2xl space-y-5">
 
-    <form method="POST" action="{{ route('admin.specialties.store') }}" class="bg-white rounded-lg shadow p-6 space-y-4">
+    <a href="{{ route('admin.specialties.index') }}"
+       class="inline-flex items-center gap-1.5 text-sm text-[#526069] hover:text-[#003f87]">
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_back</span>
+        Retour aux spécialités
+    </a>
+
+    <form method="POST" action="{{ route('admin.specialties.store') }}"
+          class="bg-white rounded-2xl border border-[#e0e7ff] shadow-sm p-6 space-y-4">
         @csrf
 
         <div>
-            <label class="block text-sm font-medium text-gray-900">Nom</label>
-            <input type="text" name="name" value="{{ old('name') }}" class="mt-1 w-full border rounded-lg px-4 py-2">
+            <label for="name" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">Nom</label>
+            <input type="text" id="name" name="name" value="{{ old('name') }}" required
+                   class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3">
+            @error('name') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-900">Description</label>
-            <textarea name="description" rows="4" class="mt-1 w-full border rounded-lg px-4 py-2">{{ old('description') }}</textarea>
+            <label for="description" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">Description</label>
+            <textarea id="description" name="description" rows="4"
+                      class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3">{{ old('description') }}</textarea>
         </div>
 
-        <div class="flex gap-4">
-            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded">Ajouter</button>
-            <a href="{{ route('admin.specialties.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-900 px-6 py-2 rounded">Annuler</a>
+        <div class="flex flex-col sm:flex-row gap-3 pt-2">
+            <button type="submit" class="px-6 py-3 bg-[#003f87] text-white rounded-xl text-sm font-semibold">Créer</button>
+            <a href="{{ route('admin.specialties.index') }}" class="px-6 py-3 border border-[#c2c6d4] rounded-xl text-sm font-semibold text-[#526069] text-center">Annuler</a>
         </div>
     </form>
 </div>

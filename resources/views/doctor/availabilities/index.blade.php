@@ -14,7 +14,7 @@
 <div class="space-y-6">
 
     {{-- Stats --}}
-    <div class="grid grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-white rounded-xl p-5 border border-[#c2c6d4]/30 shadow-sm">
             <p class="text-sm text-[#526069] mb-1">Total créneaux</p>
             <p class="text-3xl font-bold text-[#0d1c2f]">{{ $stats['total'] }}</p>
@@ -61,7 +61,7 @@
             </div>
 
             {{-- Grille des créneaux --}}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 pl-[4.5rem]">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:pl-[4.5rem]">
                 @foreach($slots->sortBy('start_time') as $slot)
                     <div class="bg-white rounded-xl border border-[#c2c6d4]/40 shadow-sm px-4 py-3
                                 flex items-center justify-between gap-3
@@ -89,8 +89,9 @@
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit"
-                                    class="w-7 h-7 flex items-center justify-center rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                    class="w-10 h-10 flex items-center justify-center rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
                                     title="Supprimer ce créneau"
+                                    aria-label="Supprimer le créneau de {{ substr($slot->start_time, 0, 5) }}"
                                     onclick="return confirm('Supprimer ce créneau ?')">
                                     <span class="material-symbols-outlined text-sm">delete</span>
                                 </button>

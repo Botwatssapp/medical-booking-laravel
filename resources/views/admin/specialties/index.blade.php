@@ -18,8 +18,8 @@
         $sortLink = request()->fullUrlWithQuery(['direction' => $sortDir === 'asc' ? 'desc' : 'asc', 'page' => 1]);
         $sortIcon = $sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward';
     @endphp
-    <div class="bg-white rounded-2xl border border-[#e0e7ff] overflow-hidden">
-        <table class="w-full">
+    <div class="bg-white rounded-2xl border border-[#e0e7ff] overflow-x-auto">
+        <table class="w-full min-w-[560px]">
             <thead class="bg-[#f8faff] border-b border-[#e0e7ff]">
                 <tr>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">
@@ -65,8 +65,10 @@
                 @empty
                     <tr>
                         <td colspan="3" class="px-6 py-12 text-center text-[#526069]">
-                            <span class="material-symbols-outlined text-4xl text-[#c2c6d4] block mb-2">category</span>
-                            Aucune spécialité enregistrée
+                            <span class="material-symbols-outlined text-4xl text-[#c2c6d4] block mb-2" aria-hidden="true">category</span>
+                            <p class="font-semibold text-[#0d1c2f]">Aucune spécialité</p>
+                            <p class="text-sm mt-1 mb-4">Ajoutez une spécialité avant de valider un médecin.</p>
+                            <a href="{{ route('admin.specialties.create') }}" class="inline-flex items-center px-4 py-2 bg-[#003f87] text-white rounded-xl text-sm font-semibold">Ajouter une spécialité</a>
                         </td>
                     </tr>
                 @endforelse

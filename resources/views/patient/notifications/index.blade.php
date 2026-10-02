@@ -2,7 +2,7 @@
 @section('title', 'Mes notifications')
 
 @section('content')
-<div class="max-w-3xl mx-auto px-8 py-10">
+<div class="max-w-3xl mx-auto px-4 sm:px-8 py-8 sm:py-10">
 
     {{-- En-tête --}}
     <div class="flex items-center justify-between mb-8">
@@ -22,14 +22,6 @@
             </form>
         @endif
     </div>
-
-    {{-- Flash --}}
-    @if(session('success'))
-        <div class="flex items-center gap-3 bg-green-50 border border-green-200 text-green-800 rounded-xl px-5 py-4 mb-6">
-            <span class="material-symbols-outlined text-green-600">check_circle</span>
-            <span>{{ session('success') }}</span>
-        </div>
-    @endif
 
     {{-- Liste --}}
     <div class="space-y-3">

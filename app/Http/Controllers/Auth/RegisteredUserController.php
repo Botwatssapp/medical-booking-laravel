@@ -43,35 +43,23 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role'     => ['required', 'string', 'in:patient,doctor'],
+            'role' => ['required', 'string', 'in:patient,doctor'],
         ]);
 
         $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
+            'name' => $request->name,
+            'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role'     => $request->role,
+            'role' => $request->role,
         ]);
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect($this->dashboardRouteFor($user));
-    }
-
-    /**
-     * Retourne l'URL du tableau de bord selon le rôle de l'utilisateur.
-     */
-    private function dashboardRouteFor(User $user): string
-    {
-        return match ($user->role) {
-            'admin'  => route('admin.dashboard',   absolute: false),
-            'doctor' => route('doctor.dashboard',  absolute: false),
-            default  => route('patient.dashboard', absolute: false),
-        };
+        return redirect($user->dashboardPath());
     }
 }

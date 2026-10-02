@@ -2,31 +2,43 @@
 
 namespace App\Http\Controllers\Doctor;
 
+use App\Exceptions\AppointmentException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateAppointmentRequest;
-use App\Mail\AppointmentExpired;
 use App\Models\Appointment;
-use App\Models\Availability;
-use App\Notifications\AppointmentExpiredNotification;
-use App\Notifications\AppointmentRescheduledNotification;
+use App\Services\AppointmentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AppointmentController extends Controller
 {
+    public function __construct(private readonly AppointmentService $appointments) {}
+
     public function index(Request $request): View
     {
         $doctor = auth()->user()->doctor;
 
+        if (! $doctor) {
+            abort(403, 'Votre profil médecin n\'est pas encore validé.');
+        }
+
         $query = $doctor->appointments()->with(['patient', 'availability']);
 
-        if ($request->filled('status')) {
+        $allowedStatuses = [
+            Appointment::STATUS_PENDING,
+            Appointment::STATUS_ACCEPTED,
+            Appointment::STATUS_REJECTED,
+            Appointment::STATUS_CANCELLED,
+            Appointment::STATUS_COMPLETED,
+            Appointment::STATUS_MISSED,
+        ];
+
+        if ($request->filled('status') && in_array($request->status, $allowedStatuses, true)) {
             $query->where('status', $request->status);
         }
 
-        $direction    = $request->query('direction') === 'asc' ? 'asc' : 'desc';
+        $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
         $appointments = $query->orderBy('appointment_date', $direction)->paginate(15)->withQueryString();
 
         return view('doctor.appointments.index', compact('appointments'));
@@ -43,32 +55,52 @@ class AppointmentController extends Controller
 
     public function update(UpdateAppointmentRequest $request, Appointment $appointment): RedirectResponse
     {
-        $this->authorize('update', $appointment);
-
         $data = $request->validated();
+        $status = $data['status'] ?? null;
 
-        // Libérer le créneau si le médecin annule manuellement
-        if (($data['status'] ?? null) === Appointment::STATUS_CANCELLED) {
-            DB::transaction(function () use ($appointment, $data) {
-                $appointment->availability?->update(['is_available' => true]);
-                $appointment->update($data);
-            });
-        } else {
-            $appointment->update($data);
+        try {
+            match ($status) {
+                Appointment::STATUS_ACCEPTED => $this->applyDoctorStatus($appointment, 'accept', fn () => $this->appointments->accept($appointment)),
+                Appointment::STATUS_REJECTED => $this->applyDoctorStatus($appointment, 'reject', fn () => $this->appointments->reject($appointment)),
+                Appointment::STATUS_COMPLETED => $this->applyDoctorStatus($appointment, 'complete', fn () => $this->appointments->complete($appointment)),
+                Appointment::STATUS_MISSED => $this->applyDoctorStatus($appointment, 'markMissed', fn () => $this->appointments->markMissed($appointment)),
+                Appointment::STATUS_CANCELLED => $this->applyDoctorStatus($appointment, 'cancel', fn () => $this->appointments->cancel($appointment)),
+                default => $this->authorize('update', $appointment),
+            };
+        } catch (AppointmentException $e) {
+            return back()->with('error', $e->getMessage());
         }
 
+        $appointment->refresh();
+
+        $notesPayload = array_intersect_key($data, array_flip(['notes', 'appointment_date']));
+        if ($notesPayload !== []) {
+            $this->authorize('update', $appointment);
+            $appointment->update($notesPayload);
+        }
+
+        $message = match ($status) {
+            Appointment::STATUS_ACCEPTED => 'Rendez-vous accepté. Le patient a été notifié.',
+            Appointment::STATUS_REJECTED => 'Rendez-vous refusé. Le patient a été notifié.',
+            Appointment::STATUS_COMPLETED => 'Rendez-vous marqué comme terminé.',
+            Appointment::STATUS_MISSED => 'Rendez-vous marqué comme non réalisé.',
+            Appointment::STATUS_CANCELLED => 'Rendez-vous annulé.',
+            default => 'Rendez-vous mis à jour avec succès.',
+        };
+
         return redirect()->route('doctor.appointments.index')
-            ->with('success', 'Rendez-vous mis à jour avec succès.');
+            ->with('success', $message);
     }
 
     public function destroy(Appointment $appointment): RedirectResponse
     {
-        $this->authorize('delete', $appointment);
+        $this->authorize('cancel', $appointment);
 
-        DB::transaction(function () use ($appointment) {
-            $appointment->availability?->update(['is_available' => true]);
-            $appointment->update(['status' => Appointment::STATUS_CANCELLED]);
-        });
+        try {
+            $this->appointments->cancel($appointment);
+        } catch (AppointmentException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()->route('doctor.appointments.index')
             ->with('success', 'Rendez-vous annulé avec succès.');
@@ -77,88 +109,21 @@ class AppointmentController extends Controller
     /**
      * Annule un rendez-vous confirmé et reporte automatiquement le patient
      * sur le premier créneau disponible du même médecin.
-     *
-     * Si aucun créneau n'est disponible, le rendez-vous est simplement
-     * annulé et le patient reçoit un email d'annulation.
      */
     public function reschedule(Appointment $appointment): RedirectResponse
     {
-        $this->authorize('update', $appointment);
+        $this->authorize('reschedule', $appointment);
 
-        if ($appointment->status !== Appointment::STATUS_ACCEPTED) {
-            return back()->with('error', 'Seuls les rendez-vous confirmés peuvent être reportés.');
+        try {
+            $newAppointment = $this->appointments->reschedule($appointment);
+        } catch (AppointmentException $e) {
+            return back()->with('error', $e->getMessage());
         }
 
-        // Charger l'ancien créneau avant la transaction pour construire le filtre "après"
-        $appointment->load('availability');
-        $oldSlot = $appointment->availability;
-
-        $newAppointment = null;
-
-        DB::transaction(function () use ($appointment, $oldSlot, &$newAppointment) {
-            // 1 — Libérer l'ancien créneau
-            if ($appointment->availability_id) {
-                Availability::where('id', $appointment->availability_id)
-                    ->lockForUpdate()
-                    ->first()
-                    ?->update(['is_available' => true]);
-            }
-
-            // 2 — Annuler l'ancien rendez-vous
-            $appointment->update(['status' => Appointment::STATUS_CANCELLED]);
-
-            // 3 — Chercher le prochain créneau libre STRICTEMENT après l'ancien créneau
-            //     pour éviter de re-sélectionner le créneau qui vient d'être libéré.
-            $query = Availability::where('doctor_id', $appointment->doctor_id)
-                ->where('is_available', true)
-                ->where('date', '>=', now()->toDateString());
-
-            if ($oldSlot) {
-                $slotDate = $oldSlot->date->format('Y-m-d');
-                $slotTime = $oldSlot->start_time;
-                $query->where(function ($q) use ($slotDate, $slotTime) {
-                    $q->where('date', '>', $slotDate)
-                      ->orWhere(function ($q2) use ($slotDate, $slotTime) {
-                          $q2->where('date', $slotDate)
-                             ->where('start_time', '>', $slotTime);
-                      });
-                });
-            }
-
-            $nextSlot = $query->orderBy('date')->orderBy('start_time')->lockForUpdate()->first();
-
-            if (!$nextSlot) {
-                return; // Pas de créneau → juste annulation
-            }
-
-            // 4 — Réserver le nouveau créneau
-            $nextSlot->update(['is_available' => false]);
-
-            // 5 — Créer le nouveau rendez-vous (auto-confirmé)
-            $newAppointment = Appointment::create([
-                'patient_id'       => $appointment->patient_id,
-                'doctor_id'        => $appointment->doctor_id,
-                'availability_id'  => $nextSlot->id,
-                'appointment_date' => $nextSlot->date->format('Y-m-d') . ' ' . $nextSlot->start_time,
-                'status'           => Appointment::STATUS_ACCEPTED,
-                'notes'            => $appointment->notes,
-            ]);
-        });
-
-        // — Notifications (hors transaction pour ne pas bloquer en cas d'erreur SMTP) —
         $appointment->load(['patient', 'doctor.user', 'availability']);
 
         if ($newAppointment) {
             $newAppointment->load(['patient', 'doctor.user', 'availability']);
-
-            try {
-                // Email + notification base de données en un seul appel
-                $appointment->patient->notify(
-                    new AppointmentRescheduledNotification($appointment, $newAppointment)
-                );
-            } catch (\Throwable) {
-                // Silencieux : le report a bien eu lieu même si la notification échoue
-            }
 
             $date = $newAppointment->appointment_date->format('d/m/Y');
             $time = $newAppointment->appointment_date->format('H:i');
@@ -167,14 +132,13 @@ class AppointmentController extends Controller
                 ->with('success', "Rendez-vous annulé et reporté automatiquement au $date à $time. Le patient a été notifié par email et notification.");
         }
 
-        // Aucun créneau disponible → annulation simple + notification
-        try {
-            $appointment->patient->notify(
-                new AppointmentExpiredNotification($appointment, 'cancelled')
-            );
-        } catch (\Throwable) {}
-
         return redirect()->route('doctor.appointments.index')
             ->with('warning', 'Rendez-vous annulé. Aucun créneau disponible pour un report automatique. Le patient a été notifié.');
+    }
+
+    private function applyDoctorStatus(Appointment $appointment, string $ability, callable $action): void
+    {
+        $this->authorize($ability, $appointment);
+        $action();
     }
 }

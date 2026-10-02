@@ -19,8 +19,8 @@
             </div>
             <div class="space-y-2">
                 @foreach($pendingDoctors as $pending)
-                    <div class="flex items-center justify-between bg-white rounded-xl px-4 py-3 border border-amber-200">
-                        <div class="flex items-center gap-3">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white rounded-xl px-4 py-3 border border-amber-200">
+                        <div class="flex items-center gap-3 min-w-0">
                             <div class="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center text-amber-700 font-bold text-sm">
                                 {{ strtoupper(substr($pending->name, 0, 1)) }}
                             </div>
@@ -44,7 +44,8 @@
     <div class="flex flex-wrap items-center gap-3">
         <form method="GET" action="{{ route('admin.users.index') }}"
               class="flex items-center gap-3 flex-1 min-w-0">
-            <select name="role"
+            <label for="role-filter" class="sr-only">Filtrer par rôle</label>
+            <select id="role-filter" name="role"
                     class="border border-[#c2c6d4] rounded-xl px-4 py-2.5 text-sm text-[#0d1c2f] focus:outline-none focus:ring-2 focus:ring-[#003f87]/30">
                 <option value="">Tous les rôles</option>
                 <option value="patient" {{ request('role') === 'patient' ? 'selected' : '' }}>Patients</option>
@@ -70,8 +71,8 @@
         $sortLink = fn($col) => request()->fullUrlWithQuery(['sort' => $col, 'direction' => ($sortCol === $col && $sortDir === 'asc') ? 'desc' : 'asc', 'page' => 1]);
         $sortIcon = fn($col) => $sortCol === $col ? ($sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more';
     @endphp
-    <div class="bg-white rounded-2xl border border-[#e0e7ff] overflow-hidden">
-        <table class="w-full">
+    <div class="bg-white rounded-2xl border border-[#e0e7ff] overflow-x-auto">
+        <table class="w-full min-w-[720px]">
             <thead class="bg-[#f8faff] border-b border-[#e0e7ff]">
                 <tr>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">
@@ -101,7 +102,7 @@
                                             flex items-center justify-center font-bold text-sm
                                             {{ $user->role === 'admin' ? 'text-red-700' : ($user->role === 'doctor' ? 'text-blue-700' : 'text-green-700') }}">
                                     @if($user->profile_image_url)
-                                        <img src="{{ $user->profile_image_url }}" class="w-full h-full object-cover" alt="">
+                                        <img src="{{ $user->profile_image_url }}" class="w-full h-full object-cover" alt="Photo de {{ $user->name }}">
                                     @else
                                         {{ strtoupper(substr($user->name, 0, 1)) }}
                                     @endif
@@ -126,21 +127,32 @@
                             </span>
                         </td>
                         <td class="px-6 py-4">
-                            @if($user->role === 'doctor')
-                                @if($user->doctor)
+                            <div class="space-y-1">
+                                @if($user->email_verified_at)
                                     <span class="flex items-center gap-1 text-xs font-semibold text-green-700">
-                                        <span class="material-symbols-outlined text-[14px]">check_circle</span>
-                                        Profil actif
+                                        <span class="material-symbols-outlined text-[14px]" aria-hidden="true">mark_email_read</span>
+                                        Email vérifié
                                     </span>
                                 @else
                                     <span class="flex items-center gap-1 text-xs font-semibold text-amber-700">
-                                        <span class="material-symbols-outlined text-[14px]">pending</span>
-                                        En attente
+                                        <span class="material-symbols-outlined text-[14px]" aria-hidden="true">mark_email_unread</span>
+                                        Email non vérifié
                                     </span>
                                 @endif
-                            @else
-                                <span class="text-xs text-[#526069]">—</span>
-                            @endif
+                                @if($user->role === 'doctor')
+                                    @if($user->doctor)
+                                        <span class="flex items-center gap-1 text-xs font-semibold text-green-700">
+                                            <span class="material-symbols-outlined text-[14px]" aria-hidden="true">check_circle</span>
+                                            Profil médecin actif
+                                        </span>
+                                    @else
+                                        <span class="flex items-center gap-1 text-xs font-semibold text-amber-700">
+                                            <span class="material-symbols-outlined text-[14px]" aria-hidden="true">pending</span>
+                                            Profil médecin en attente
+                                        </span>
+                                    @endif
+                                @endif
+                            </div>
                         </td>
                         <td class="px-6 py-4 text-xs text-[#526069]">
                             {{ $user->created_at->format('d/m/Y') }}
@@ -172,8 +184,14 @@
                 @empty
                     <tr>
                         <td colspan="5" class="px-6 py-12 text-center text-[#526069]">
-                            <span class="material-symbols-outlined text-4xl text-[#c2c6d4] block mb-2">group</span>
-                            Aucun utilisateur trouvé
+                            <span class="material-symbols-outlined text-4xl text-[#c2c6d4] block mb-2" aria-hidden="true">group</span>
+                            @if(request('role'))
+                                <p class="font-semibold text-[#0d1c2f]">Aucun utilisateur pour ce rôle</p>
+                                <a href="{{ route('admin.users.index') }}" class="inline-block mt-3 text-sm font-semibold text-[#003f87] hover:underline">Voir tous les utilisateurs</a>
+                            @else
+                                <p class="font-semibold text-[#0d1c2f]">Aucun utilisateur</p>
+                                <a href="{{ route('admin.users.create') }}" class="inline-flex mt-3 items-center px-4 py-2 bg-[#003f87] text-white rounded-xl text-sm font-semibold">Ajouter un utilisateur</a>
+                            @endif
                         </td>
                     </tr>
                 @endforelse

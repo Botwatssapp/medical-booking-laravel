@@ -7,63 +7,89 @@ use App\Models\Appointment;
 use Illuminate\View\View;
 
 /**
- * Contrôleur du tableau de bord médecin.
- *
- * Affiche les statistiques personnelles du médecin et ses prochains
- * rendez-vous. Les compteurs sont calculés via des agrégations SQL
- * optimisées.
+ * Tableau de bord médecin : statistiques et prochains rendez-vous réels.
  */
 class DashboardController extends Controller
 {
-    /**
-     * Affiche le tableau de bord du médecin connecté.
-     *
-     * Optimisation : les 4 compteurs sont calculés en une seule requête
-     * via `selectRaw` au lieu de 4 requêtes séparées.
-     *
-     * @return View
-     */
     public function index(): View
     {
         $doctor = auth()->user()->doctor;
 
-        // Médecin inscrit mais profil pas encore créé par l'admin
-        if (!$doctor) {
-            return view('doctor.dashboard', [
-                'profileIncomplete'    => true,
-                'totalAppointments'    => 0,
-                'pendingAppointments'  => 0,
-                'acceptedAppointments' => 0,
-                'rejectedAppointments' => 0,
-                'upcomingAppointments' => collect(),
-            ]);
+        if (! $doctor) {
+            return view('doctor.dashboard', $this->emptyDashboard(true));
         }
 
-        // Agrégation des statuts en une seule requête SQL
         $stats = $doctor->appointments()
-            ->selectRaw("
+            ->selectRaw('
                 COUNT(*) as total,
-                SUM(status = 'pending')   as pending,
-                SUM(status = 'accepted')  as accepted,
-                SUM(status = 'rejected')  as rejected
-            ")
+                SUM(status = \''.Appointment::STATUS_PENDING.'\') as pending,
+                SUM(status = \''.Appointment::STATUS_ACCEPTED.'\') as accepted,
+                SUM(status = \''.Appointment::STATUS_REJECTED.'\') as rejected,
+                SUM(status = \''.Appointment::STATUS_COMPLETED.'\') as completed,
+                SUM(status = \''.Appointment::STATUS_MISSED.'\') as missed,
+                SUM(status = \''.Appointment::STATUS_CANCELLED.'\') as cancelled
+            ')
             ->first();
 
-        // Prochains rendez-vous futurs avec les données du patient et du créneau
+        $relations = ['patient', 'availability'];
+
+        $todayAppointments = $doctor->appointments()
+            ->whereIn('status', [
+                Appointment::STATUS_PENDING,
+                Appointment::STATUS_ACCEPTED,
+            ])
+            ->whereDate('appointment_date', today())
+            ->with($relations)
+            ->orderBy('appointment_date')
+            ->get();
+
         $upcomingAppointments = $doctor->appointments()
-            ->with(['patient', 'availability'])
+            ->whereIn('status', [
+                Appointment::STATUS_PENDING,
+                Appointment::STATUS_ACCEPTED,
+            ])
             ->upcoming()
+            ->with($relations)
             ->orderBy('appointment_date')
             ->limit(5)
             ->get();
 
+        $freeSlots = $doctor->availabilities()->available()->count();
+
         return view('doctor.dashboard', [
-            'profileIncomplete'    => false,
-            'totalAppointments'    => $stats->total    ?? 0,
-            'pendingAppointments'  => $stats->pending  ?? 0,
+            'profileIncomplete' => false,
+            'totalAppointments' => $stats->total ?? 0,
+            'pendingAppointments' => $stats->pending ?? 0,
             'acceptedAppointments' => $stats->accepted ?? 0,
             'rejectedAppointments' => $stats->rejected ?? 0,
+            'completedAppointments' => $stats->completed ?? 0,
+            'missedAppointments' => $stats->missed ?? 0,
+            'cancelledAppointments' => $stats->cancelled ?? 0,
+            'todayAppointments' => $todayAppointments,
             'upcomingAppointments' => $upcomingAppointments,
+            'nextAppointment' => $upcomingAppointments->first(),
+            'freeSlots' => $freeSlots,
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function emptyDashboard(bool $profileIncomplete): array
+    {
+        return [
+            'profileIncomplete' => $profileIncomplete,
+            'totalAppointments' => 0,
+            'pendingAppointments' => 0,
+            'acceptedAppointments' => 0,
+            'rejectedAppointments' => 0,
+            'completedAppointments' => 0,
+            'missedAppointments' => 0,
+            'cancelledAppointments' => 0,
+            'todayAppointments' => collect(),
+            'upcomingAppointments' => collect(),
+            'nextAppointment' => null,
+            'freeSlots' => 0,
+        ];
     }
 }

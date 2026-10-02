@@ -42,7 +42,7 @@ class AuthenticatedSessionController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        return redirect()->intended($this->dashboardRouteFor($user));
+        return redirect()->intended($user->dashboardPath());
     }
 
     /**
@@ -57,17 +57,5 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
-    }
-
-    /**
-     * Retourne l'URL du tableau de bord selon le rôle de l'utilisateur.
-     */
-    private function dashboardRouteFor(User $user): string
-    {
-        return match ($user->role) {
-            'admin'  => route('admin.dashboard',   absolute: false),
-            'doctor' => route('doctor.dashboard',  absolute: false),
-            default  => route('patient.dashboard', absolute: false),
-        };
     }
 }

@@ -61,8 +61,8 @@
 
                 {{-- Erreurs --}}
                 @if($errors->any())
-                    <div class="border border-red-500/30 bg-red-500/10 rounded-xl px-4 py-3 mb-6 flex items-start gap-3">
-                        <span class="material-symbols-outlined text-red-400 text-base shrink-0 mt-0.5">error</span>
+                    <div class="border border-red-500/30 bg-red-500/10 rounded-xl px-4 py-3 mb-6 flex items-start gap-3" role="alert">
+                        <span class="material-symbols-outlined text-red-400 text-base shrink-0 mt-0.5" aria-hidden="true">error</span>
                         <div>
                             @foreach($errors->all() as $error)
                                 <p class="text-sm text-red-300">{{ $error }}</p>
@@ -75,10 +75,10 @@
                     @csrf
 
                     {{-- ── Sélecteur de rôle ── --}}
-                    <div>
-                        <label class="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-3">
-                            Je suis
-                        </label>
+                    <fieldset>
+                        <legend class="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-3">
+                            Je suis <span class="text-red-400" aria-hidden="true">*</span>
+                        </legend>
                         <div class="grid grid-cols-2 gap-3">
 
                             {{-- Patient --}}
@@ -117,17 +117,17 @@
                                 </span>
                             </label>
                         </div>
-                    </div>
+                    </fieldset>
 
                     {{-- Nom --}}
                     <div>
-                        <label class="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
-                            Nom complet
+                        <label for="name" class="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
+                            Nom complet <span class="text-red-400" aria-hidden="true">*</span>
                         </label>
                         <div class="relative">
-                            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25 text-[18px]">badge</span>
-                            <input type="text" name="name" value="{{ old('name') }}"
-                                   placeholder="Jean Dupont" required
+                            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25 text-[18px]" aria-hidden="true">badge</span>
+                            <input type="text" id="name" name="name" value="{{ old('name') }}"
+                                   placeholder="Jean Dupont" required autocomplete="name"
                                    class="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder-white/20
                                           focus:outline-none focus:border-[#3b82f6]/60 focus:ring-1 focus:ring-[#3b82f6]/30 transition-all">
                         </div>
@@ -135,13 +135,13 @@
 
                     {{-- Email --}}
                     <div>
-                        <label class="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
-                            Adresse e-mail
+                        <label for="email" class="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
+                            Adresse e-mail <span class="text-red-400" aria-hidden="true">*</span>
                         </label>
                         <div class="relative">
-                            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25 text-[18px]">mail</span>
-                            <input type="email" name="email" value="{{ old('email') }}"
-                                   placeholder="jean.dupont@email.com" required
+                            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25 text-[18px]" aria-hidden="true">mail</span>
+                            <input type="email" id="email" name="email" value="{{ old('email') }}"
+                                   placeholder="jean.dupont@email.com" required autocomplete="username"
                                    class="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder-white/20
                                           focus:outline-none focus:border-[#3b82f6]/60 focus:ring-1 focus:ring-[#3b82f6]/30 transition-all">
                         </div>
@@ -149,18 +149,20 @@
 
                     {{-- Mot de passe --}}
                     <div>
-                        <label class="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
-                            Mot de passe
+                        <label for="pw" class="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
+                            Mot de passe <span class="text-red-400" aria-hidden="true">*</span>
                         </label>
                         <div class="relative">
-                            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25 text-[18px]">lock</span>
+                            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25 text-[18px]" aria-hidden="true">lock</span>
                             <input type="password" name="password" id="pw"
-                                   placeholder="Minimum 8 caractères" required
+                                   placeholder="Minimum 8 caractères" required autocomplete="new-password"
                                    class="w-full pl-10 pr-11 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder-white/20
                                           focus:outline-none focus:border-[#3b82f6]/60 focus:ring-1 focus:ring-[#3b82f6]/30 transition-all">
                             <button type="button" id="toggle-pw"
-                                    class="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/60 transition-colors">
-                                <span class="material-symbols-outlined text-[18px]" id="eye-icon">visibility</span>
+                                    class="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/60 transition-colors"
+                                    aria-label="Afficher le mot de passe"
+                                    aria-controls="pw">
+                                <span class="material-symbols-outlined text-[18px]" id="eye-icon" aria-hidden="true">visibility</span>
                             </button>
                         </div>
 
@@ -175,13 +177,13 @@
 
                     {{-- Confirmer --}}
                     <div>
-                        <label class="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
-                            Confirmer le mot de passe
+                        <label for="pw2" class="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
+                            Confirmer le mot de passe <span class="text-red-400" aria-hidden="true">*</span>
                         </label>
                         <div class="relative">
-                            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25 text-[18px]">lock_open</span>
+                            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25 text-[18px]" aria-hidden="true">lock_open</span>
                             <input type="password" name="password_confirmation" id="pw2"
-                                   placeholder="Répétez le mot de passe" required
+                                   placeholder="Répétez le mot de passe" required autocomplete="new-password"
                                    class="w-full pl-10 pr-11 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder-white/20
                                           focus:outline-none focus:border-[#3b82f6]/60 focus:ring-1 focus:ring-[#3b82f6]/30 transition-all">
                             <span class="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-[18px] opacity-0 transition-opacity" id="match-icon"></span>
@@ -227,29 +229,25 @@
                 </a>
 
                 <h2 class="text-3xl font-bold text-white leading-tight mb-4">
-                    Rejoignez<br>
-                    <span class="text-[#7eb8ff]">des milliers</span><br>
-                    de patients.
+                    Un espace<br>
+                    <span class="text-[#7eb8ff]">pour votre suivi</span><br>
+                    médical.
                 </h2>
                 <p class="text-white/55 text-sm leading-relaxed max-w-xs">
-                    Une plateforme médicale moderne pour prendre soin de vous et de vos proches.
+                    Créez un compte patient pour réserver, ou un compte médecin pour gérer vos créneaux après validation.
                 </p>
             </div>
 
-            {{-- Stats --}}
-            <div class="relative z-10 grid grid-cols-2 gap-3 mt-8">
+            <div class="relative z-10 space-y-3 mt-8">
                 @foreach([
-                    ['value' => '500+',  'label' => 'Médecins',     'icon' => 'stethoscope'],
-                    ['value' => '10k+',  'label' => 'Patients',     'icon' => 'group'],
-                    ['value' => '50k+',  'label' => 'Rendez-vous',  'icon' => 'calendar_month'],
-                    ['value' => '4.9★',  'label' => 'Satisfaction', 'icon' => 'star'],
-                ] as $stat)
+                    ['icon' => 'event_available', 'text' => 'Réservez un créneau disponible'],
+                    ['icon' => 'stethoscope',     'text' => 'Consultez les médecins validés'],
+                    ['icon' => 'notifications',   'text' => 'Suivez le statut de vos demandes'],
+                    ['icon' => 'manage_accounts', 'text' => 'Gérez votre profil en toute clarté'],
+                ] as $item)
                     <div class="bg-white/8 border border-white/10 rounded-xl p-3.5 flex items-center gap-3">
-                        <span class="material-symbols-outlined text-[#7eb8ff] text-[18px]">{{ $stat['icon'] }}</span>
-                        <div>
-                            <p class="text-white font-bold text-lg leading-none">{{ $stat['value'] }}</p>
-                            <p class="text-white/45 text-[11px] mt-0.5">{{ $stat['label'] }}</p>
-                        </div>
+                        <span class="material-symbols-outlined text-[#7eb8ff] text-[18px]" aria-hidden="true">{{ $item['icon'] }}</span>
+                        <p class="text-white/80 text-sm">{{ $item['text'] }}</p>
                     </div>
                 @endforeach
             </div>

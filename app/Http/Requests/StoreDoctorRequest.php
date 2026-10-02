@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * Form Request pour la création d'un profil médecin par l'administrateur.
@@ -16,8 +17,6 @@ class StoreDoctorRequest extends FormRequest
 {
     /**
      * Seuls les administrateurs peuvent créer un profil médecin.
-     *
-     * @return bool
      */
     public function authorize(): bool
     {
@@ -32,12 +31,16 @@ class StoreDoctorRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id'       => ['required', 'exists:users,id', 'unique:doctors,user_id'],
+            'user_id' => [
+                'required',
+                Rule::exists('users', 'id')->where(fn ($query) => $query->where('role', 'doctor')),
+                'unique:doctors,user_id',
+            ],
             'speciality_id' => ['required', 'exists:specialities,id'],
-            'phone'         => ['nullable', 'string', 'max:20'],
-            'address'       => ['nullable', 'string', 'max:255'],
-            'bio'           => ['nullable', 'string', 'max:1000'],
-            'photo'         => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'bio' => ['nullable', 'string', 'max:1000'],
+            'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ];
     }
 
@@ -49,14 +52,14 @@ class StoreDoctorRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'user_id.required'       => 'L\'utilisateur est obligatoire.',
-            'user_id.exists'         => 'L\'utilisateur sélectionné n\'existe pas.',
-            'user_id.unique'         => 'Cet utilisateur est déjà enregistré comme médecin.',
+            'user_id.required' => 'L\'utilisateur est obligatoire.',
+            'user_id.exists' => 'L\'utilisateur sélectionné n\'existe pas ou n\'est pas un compte médecin.',
+            'user_id.unique' => 'Cet utilisateur est déjà enregistré comme médecin.',
             'speciality_id.required' => 'La spécialité est obligatoire.',
-            'speciality_id.exists'   => 'La spécialité sélectionnée n\'existe pas.',
-            'photo.image'            => 'Le fichier doit être une image.',
-            'photo.mimes'            => 'L\'image doit être au format JPEG, PNG, JPG ou GIF.',
-            'photo.max'              => 'L\'image ne doit pas dépasser 2 Mo.',
+            'speciality_id.exists' => 'La spécialité sélectionnée n\'existe pas.',
+            'photo.image' => 'Le fichier doit être une image.',
+            'photo.mimes' => 'L\'image doit être au format JPEG, PNG, JPG ou GIF.',
+            'photo.max' => 'L\'image ne doit pas dépasser 2 Mo.',
         ];
     }
 }

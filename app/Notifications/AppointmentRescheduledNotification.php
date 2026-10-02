@@ -37,18 +37,18 @@ class AppointmentRescheduledNotification extends Notification
             : $this->newAppointment->appointment_date->format('H:i');
 
         return [
-            'type'           => 'appointment_rescheduled',
-            'icon'           => 'event_repeat',
-            'color'          => 'amber',
-            'title'          => 'Rendez-vous reporté',
-            'message'        => "Votre rendez-vous du $oldDate à $oldTime a été reporté au $newDate à $newTime.",
-            'old_date'       => $oldDate,
-            'old_time'       => $oldTime,
-            'new_date'       => $newDate,
-            'new_time'       => $newTime,
-            'doctor_name'    => $this->newAppointment->doctor->user->name,
+            'type' => 'appointment_rescheduled',
+            'icon' => 'event_repeat',
+            'color' => 'amber',
+            'title' => 'Rendez-vous reporté',
+            'message' => "Votre rendez-vous du $oldDate à $oldTime a été reporté au $newDate à $newTime.",
+            'old_date' => $oldDate,
+            'old_time' => $oldTime,
+            'new_date' => $newDate,
+            'new_time' => $newTime,
+            'doctor_name' => $this->newAppointment->doctor->user->name,
             'appointment_id' => $this->newAppointment->id,
-            'url'            => route('patient.appointments.index'),
+            'url' => route('patient.appointments.index'),
         ];
     }
 

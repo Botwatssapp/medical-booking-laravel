@@ -53,9 +53,9 @@
             {{-- Features --}}
             <div class="relative z-10 space-y-3 mt-10">
                 @foreach([
-                    ['icon' => 'event_available', 'text' => 'Prise de RDV en 1 clic'],
-                    ['icon' => 'notifications',   'text' => 'Rappels automatiques'],
-                    ['icon' => 'security',        'text' => 'Données 100% sécurisées'],
+                    ['icon' => 'event_available', 'text' => 'Prise de rendez-vous en ligne'],
+                    ['icon' => 'calendar_month',  'text' => 'Suivi de vos consultations'],
+                    ['icon' => 'badge',           'text' => 'Espace patient, médecin ou admin'],
                 ] as $f)
                     <div class="flex items-center gap-3">
                         <div class="w-7 h-7 bg-white/12 rounded-lg flex items-center justify-center shrink-0">
@@ -80,8 +80,8 @@
 
                 {{-- Erreurs --}}
                 @if($errors->any())
-                    <div class="border border-red-500/30 bg-red-500/10 rounded-xl px-4 py-3 mb-6 flex items-start gap-3">
-                        <span class="material-symbols-outlined text-red-400 text-base shrink-0 mt-0.5">error</span>
+                    <div class="border border-red-500/30 bg-red-500/10 rounded-xl px-4 py-3 mb-6 flex items-start gap-3" role="alert">
+                        <span class="material-symbols-outlined text-red-400 text-base shrink-0 mt-0.5" aria-hidden="true">error</span>
                         <div>
                             @foreach($errors->all() as $error)
                                 <p class="text-sm text-red-300">{{ $error }}</p>
@@ -92,7 +92,7 @@
 
                 {{-- Session status --}}
                 @if(session('status'))
-                    <div class="border border-green-500/30 bg-green-500/10 rounded-xl px-4 py-3 mb-6">
+                    <div class="border border-green-500/30 bg-green-500/10 rounded-xl px-4 py-3 mb-6" role="status">
                         <p class="text-sm text-green-300">{{ session('status') }}</p>
                     </div>
                 @endif
@@ -102,13 +102,13 @@
 
                     {{-- Email --}}
                     <div>
-                        <label class="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
-                            Adresse e-mail
+                        <label for="email" class="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
+                            Adresse e-mail <span class="text-red-400" aria-hidden="true">*</span>
                         </label>
                         <div class="relative">
-                            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25 text-[18px]">mail</span>
-                            <input type="email" name="email" value="{{ old('email') }}"
-                                   placeholder="nom@exemple.com" required autofocus
+                            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25 text-[18px]" aria-hidden="true">mail</span>
+                            <input type="email" id="email" name="email" value="{{ old('email') }}"
+                                   placeholder="nom@exemple.com" required autofocus autocomplete="username"
                                    class="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder-white/20
                                           focus:outline-none focus:border-[#3b82f6]/60 focus:ring-1 focus:ring-[#3b82f6]/30 transition-all">
                         </div>
@@ -117,8 +117,8 @@
                     {{-- Mot de passe --}}
                     <div>
                         <div class="flex items-center justify-between mb-2">
-                            <label class="text-[11px] font-bold uppercase tracking-widest text-white/40">
-                                Mot de passe
+                            <label for="pw" class="text-[11px] font-bold uppercase tracking-widest text-white/40">
+                                Mot de passe <span class="text-red-400" aria-hidden="true">*</span>
                             </label>
                             @if(Route::has('password.request'))
                                 <a href="{{ route('password.request') }}"
@@ -130,12 +130,14 @@
                         <div class="relative">
                             <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25 text-[18px]">lock</span>
                             <input type="password" name="password" id="pw"
-                                   placeholder="••••••••" required
+                                   placeholder="••••••••" required autocomplete="current-password"
                                    class="w-full pl-10 pr-11 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder-white/20
                                           focus:outline-none focus:border-[#3b82f6]/60 focus:ring-1 focus:ring-[#3b82f6]/30 transition-all">
                             <button type="button" id="toggle-pw"
-                                    class="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/60 transition-colors">
-                                <span class="material-symbols-outlined text-[18px]" id="eye-icon">visibility</span>
+                                    class="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/60 transition-colors"
+                                    aria-label="Afficher le mot de passe"
+                                    aria-controls="pw">
+                                <span class="material-symbols-outlined text-[18px]" id="eye-icon" aria-hidden="true">visibility</span>
                             </button>
                         </div>
                     </div>

@@ -33,12 +33,14 @@
         <div class="flex-1 min-w-[200px]">
             <div class="relative">
                 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#526069] text-[18px]">search</span>
-                <input type="text" name="search" value="{{ request('search') }}"
-                       placeholder="Rechercher patient ou médecin…"
+                <label for="appointment-search" class="sr-only">Rechercher un patient ou un médecin</label>
+                <input type="search" id="appointment-search" name="search" value="{{ request('search') }}"
+                       placeholder="Nom ou email du patient ou du médecin"
                        class="w-full pl-9 pr-4 py-2.5 border border-[#c2c6d4] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#003f87]/30 focus:border-[#003f87]">
             </div>
         </div>
-        <select name="status" class="border border-[#c2c6d4] rounded-xl px-4 py-2.5 text-sm text-[#0d1c2f] focus:outline-none focus:ring-2 focus:ring-[#003f87]/30">
+        <label for="appointment-status" class="sr-only">Filtrer par statut</label>
+        <select id="appointment-status" name="status" class="border border-[#c2c6d4] rounded-xl px-4 py-2.5 text-sm text-[#0d1c2f] focus:outline-none focus:ring-2 focus:ring-[#003f87]/30">
             <option value="">Tous les statuts</option>
             <option value="pending"   {{ request('status') === 'pending'   ? 'selected' : '' }}>En attente</option>
             <option value="accepted"  {{ request('status') === 'accepted'  ? 'selected' : '' }}>Accepté</option>
@@ -66,8 +68,8 @@
         $sortLink = fn($col) => request()->fullUrlWithQuery(['sort' => $col, 'direction' => ($sortCol === $col && $sortDir === 'asc') ? 'desc' : 'asc', 'page' => 1]);
         $sortIcon = fn($col) => $sortCol === $col ? ($sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more';
     @endphp
-    <div class="bg-white rounded-2xl border border-[#e0e7ff] overflow-hidden">
-        <table class="w-full">
+    <div class="bg-white rounded-2xl border border-[#e0e7ff] overflow-x-auto">
+        <table class="w-full min-w-[800px]">
             <thead class="bg-[#f8faff] border-b border-[#e0e7ff]">
                 <tr>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold text-[#526069] uppercase tracking-wider">Patient</th>
@@ -90,25 +92,7 @@
             <tbody class="divide-y divide-[#f0f4ff]">
                 @forelse($appointments as $appointment)
                     @php
-                        $badge = match($appointment->status) {
-                            'pending'   => 'bg-yellow-100 text-yellow-800',
-                            'accepted'  => 'bg-green-100 text-green-800',
-                            'rejected'  => 'bg-red-100 text-red-800',
-                            'cancelled' => 'bg-gray-100 text-gray-700',
-                            'completed' => 'bg-blue-100 text-blue-800',
-                            'missed'    => 'bg-orange-100 text-orange-800',
-                            default     => 'bg-gray-100 text-gray-700',
-                        };
-                        $statusLabel = match($appointment->status) {
-                            'pending'   => 'En attente',
-                            'accepted'  => 'Accepté',
-                            'rejected'  => 'Refusé',
-                            'cancelled' => 'Annulé',
-                            'completed' => 'Terminé',
-                            'missed'    => 'Non réalisé',
-                            default     => ucfirst($appointment->status),
-                        };
-                        $canCancel = !in_array($appointment->status, ['cancelled', 'completed', 'missed']);
+                        $canCancel = ! in_array($appointment->status, ['cancelled', 'completed', 'missed'], true);
                     @endphp
                     <tr class="hover:bg-[#f8faff] transition-colors">
                         <td class="px-6 py-4">
@@ -133,7 +117,7 @@
                             @endif
                         </td>
                         <td class="px-6 py-4">
-                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold {{ $badge }}">{{ $statusLabel }}</span>
+                            @include('admin.partials.status-badge', ['appointment' => $appointment])
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-2 flex-wrap">
@@ -159,8 +143,14 @@
                 @empty
                     <tr>
                         <td colspan="5" class="px-6 py-12 text-center text-[#526069]">
-                            <span class="material-symbols-outlined text-4xl text-[#c2c6d4] block mb-2">calendar_month</span>
-                            Aucun rendez-vous trouvé
+                            <span class="material-symbols-outlined text-4xl text-[#c2c6d4] block mb-2" aria-hidden="true">calendar_month</span>
+                            @if(request()->hasAny(['status', 'search']))
+                                <p class="font-semibold text-[#0d1c2f]">Aucun résultat pour cette recherche</p>
+                                <a href="{{ route('admin.appointments.index') }}" class="inline-block mt-3 text-sm font-semibold text-[#003f87] hover:underline">Réinitialiser les filtres</a>
+                            @else
+                                <p class="font-semibold text-[#0d1c2f]">Aucun rendez-vous</p>
+                                <p class="text-sm mt-1">Les demandes des patients apparaîtront ici.</p>
+                            @endif
                         </td>
                     </tr>
                 @endforelse

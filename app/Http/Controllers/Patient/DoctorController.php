@@ -9,69 +9,64 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * Contrôleur de consultation de l'annuaire des médecins côté patient.
- *
- * Permet au patient de rechercher et consulter les profils médecins
- * avec leurs disponibilités futures.
+ * Annuaire des médecins validés, côté patient.
  */
 class DoctorController extends Controller
 {
-    /**
-     * Affiche la liste paginée des médecins avec filtres optionnels.
-     *
-     * Filtres disponibles :
-     * - specialty_id : filtre par spécialité
-     * - search       : recherche par nom du médecin ou nom de la spécialité
-     *
-     * @param  Request $request
-     * @return View
-     */
     public function index(Request $request): View
     {
-        $query = Doctor::with(['speciality', 'user']);
+        $query = Doctor::query()
+            ->whereHas('user', fn ($q) => $q->where('role', 'doctor'))
+            ->with(['speciality', 'user'])
+            ->withCount([
+                'availabilities as available_slots_count' => fn ($q) => $q->available(),
+            ]);
 
-        if ($request->filled('specialty_id')) {
-            $query->where('doctors.speciality_id', $request->integer('specialty_id'));
+        $specialityFilter = $request->input('speciality', $request->input('specialty_id'));
+
+        if (filled($specialityFilter)) {
+            if (ctype_digit((string) $specialityFilter)) {
+                $query->where('doctors.speciality_id', (int) $specialityFilter);
+            } else {
+                $query->whereHas('speciality', fn ($q) => $q->where('name', $specialityFilter));
+            }
         }
 
         if ($request->filled('search')) {
-            $search = $request->input('search');
+            $search = $request->string('search')->toString();
             $query->where(function ($q) use ($search) {
                 $q->whereHas('user', fn ($q2) => $q2->where('name', 'like', "%{$search}%"))
-                  ->orWhereHas('speciality', fn ($q2) => $q2->where('name', 'like', "%{$search}%"));
+                    ->orWhereHas('speciality', fn ($q2) => $q2->where('name', 'like', "%{$search}%"));
             });
         }
 
         $allowedSorts = ['name' => 'users.name', 'speciality' => 'specialities.name'];
-        $sortKey      = $request->query('sort', 'name');
-        $sort         = $allowedSorts[$sortKey] ?? 'users.name';
-        $direction    = $request->query('direction') === 'desc' ? 'desc' : 'asc';
+        $sortKey = $request->query('sort', 'name');
+        $sort = $allowedSorts[$sortKey] ?? 'users.name';
+        $direction = $request->query('direction') === 'desc' ? 'desc' : 'asc';
 
         $query->join('users', 'users.id', '=', 'doctors.user_id')
-              ->join('specialities', 'specialities.id', '=', 'doctors.speciality_id')
-              ->select('doctors.*')
-              ->orderBy($sort, $direction);
+            ->join('specialities', 'specialities.id', '=', 'doctors.speciality_id')
+            ->select('doctors.*')
+            ->orderBy($sort, $direction);
 
-        $doctors     = $query->paginate(12)->withQueryString();
-        $specialties = Speciality::orderBy('name')->get();
+        $doctors = $query->paginate(12)->withQueryString();
+        $specialties = Speciality::query()->orderBy('name')->get();
+        $hasFilters = $request->filled('search')
+            || $request->filled('speciality')
+            || $request->filled('specialty_id');
 
-        return view('patient.doctors.index', compact('doctors', 'specialties'));
+        return view('patient.doctors.index', compact('doctors', 'specialties', 'hasFilters'));
     }
 
-    /**
-     * Affiche le profil complet d'un médecin avec ses créneaux disponibles.
-     *
-     * Correction : les disponibilités sont filtrées pour n'afficher que
-     * les créneaux futurs et encore disponibles (is_available = true).
-     *
-     * @param  Doctor $doctor
-     * @return View
-     */
     public function show(Doctor $doctor): View
     {
+        $this->authorize('view', $doctor);
+
+        abort_unless($doctor->user?->isDoctor(), 404);
+
         $doctor->load(['speciality', 'user']);
 
-        // Charge tous les créneaux futurs (disponibles ET réservés)
         $availabilities = $doctor->availabilities()
             ->where('date', '>=', now()->toDateString())
             ->orderBy('date')

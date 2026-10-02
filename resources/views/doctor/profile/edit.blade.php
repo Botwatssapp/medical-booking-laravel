@@ -62,24 +62,30 @@
         @if($doctor)
             <div class="space-y-4">
                 <div>
+                    <p class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">Spécialité</p>
+                    <p class="w-full border border-[#e0e7ff] bg-[#f8faff] rounded-xl px-4 py-3 text-[#526069]">
+                        {{ $doctor->speciality->name }}
+                    </p>
+                    <p class="text-xs text-[#526069] mt-1">La spécialité est gérée par l’administrateur.</p>
+                </div>
+                <div>
                     <label for="phone" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">Téléphone</label>
                     <input type="text" id="phone" name="phone" value="{{ old('phone', $doctor->phone) }}"
-                           class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3 text-[#0d1c2f]
-                                  focus:outline-none focus:ring-2 focus:ring-[#003f87]/30 focus:border-[#003f87] transition-colors">
+                           class="sc-input">
+                    @error('phone')<p class="sc-error-text">{{ $message }}</p>@enderror
                 </div>
 
                 <div>
                     <label for="address" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">Adresse du cabinet</label>
                     <input type="text" id="address" name="address" value="{{ old('address', $doctor->address) }}"
-                           class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3 text-[#0d1c2f]
-                                  focus:outline-none focus:ring-2 focus:ring-[#003f87]/30 focus:border-[#003f87] transition-colors">
+                           class="sc-input">
+                    @error('address')<p class="sc-error-text">{{ $message }}</p>@enderror
                 </div>
 
                 <div>
                     <label for="bio" class="block text-sm font-semibold text-[#0d1c2f] mb-1.5">Biographie</label>
-                    <textarea id="bio" name="bio" rows="4"
-                              class="w-full border border-[#c2c6d4] rounded-xl px-4 py-3 text-[#0d1c2f]
-                                     focus:outline-none focus:ring-2 focus:ring-[#003f87]/30 focus:border-[#003f87] transition-colors">{{ old('bio', $doctor->bio) }}</textarea>
+                    <textarea id="bio" name="bio" rows="4" class="sc-textarea">{{ old('bio', $doctor->bio) }}</textarea>
+                    @error('bio')<p class="sc-error-text">{{ $message }}</p>@enderror
                 </div>
             </div>
         @else

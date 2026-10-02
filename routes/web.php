@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AppointmentController as AdminAppointment;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 use App\Http\Controllers\Admin\DoctorController as AdminDoctor;
+use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\SpecialtyController as AdminSpecialty;
 use App\Http\Controllers\Admin\UserController as AdminUser;
 use App\Http\Controllers\Doctor\AppointmentController as DoctorAppointment;
@@ -30,12 +31,9 @@ use Illuminate\Support\Facades\Route;
 // Page d'accueil : redirige vers le bon tableau de bord si connecté, sinon login
 Route::get('/', function () {
     if (auth()->check()) {
-        return match (auth()->user()->role) {
-            'admin'  => redirect()->route('admin.dashboard'),
-            'doctor' => redirect()->route('doctor.dashboard'),
-            default  => redirect()->route('patient.dashboard'),
-        };
+        return redirect(auth()->user()->dashboardPath());
     }
+
     return view('auth.login');
 })->name('home');
 
@@ -72,9 +70,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::patch('appointments/{appointment}/status', [AdminAppointment::class, 'updateStatus'])->name('admin.appointments.updateStatus');
 
     // Profil admin
-    Route::get('profile/edit', [\App\Http\Controllers\Admin\ProfileController::class, 'edit'])->name('admin.profile.edit');
-    Route::patch('profile', [\App\Http\Controllers\Admin\ProfileController::class, 'update'])->name('admin.profile.update');
-    Route::delete('profile/image', [\App\Http\Controllers\Admin\ProfileController::class, 'removeImage'])->name('admin.profile.removeImage');
+    Route::get('profile/edit', [ProfileController::class, 'edit'])->name('admin.profile.edit');
+    Route::patch('profile', [ProfileController::class, 'update'])->name('admin.profile.update');
+    Route::delete('profile/image', [ProfileController::class, 'removeImage'])->name('admin.profile.removeImage');
 });
 
 // =========================================================================
@@ -114,7 +112,8 @@ Route::middleware(['auth', 'doctor'])->prefix('doctor')->group(function () {
 
     // Gestion des disponibilités
     Route::resource('availabilities', AvailabilityController::class)
-        ->names('doctor.availabilities');
+        ->names('doctor.availabilities')
+        ->only(['index', 'create', 'store', 'destroy']);
 
     // Gestion des rendez-vous du médecin
     Route::get('appointments', [DoctorAppointment::class, 'index'])->name('doctor.appointments.index');

@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -17,13 +19,13 @@ use Illuminate\Support\Facades\Storage;
  * Un utilisateur peut être un patient, un médecin ou un administrateur.
  * Le rôle détermine les permissions et l'interface disponible.
  *
- * @property int    $id
+ * @property int $id
  * @property string $name
  * @property string $email
- * @property string $role  patient|doctor|admin
+ * @property string $role patient|doctor|admin
  * @property string $password
  */
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, SoftDeletes;
@@ -68,10 +70,10 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-            'birth_date'        => 'date',
-            'weight'            => 'decimal:2',
-            'height'            => 'decimal:2',
+            'password' => 'hashed',
+            'birth_date' => 'date',
+            'weight' => 'decimal:2',
+            'height' => 'decimal:2',
         ];
     }
 
@@ -97,11 +99,11 @@ class User extends Authenticatable
 
     public function getGenderLabelAttribute(): ?string
     {
-        return match($this->gender) {
-            'male'   => 'Homme',
+        return match ($this->gender) {
+            'male' => 'Homme',
             'female' => 'Femme',
-            'other'  => 'Autre',
-            default  => null,
+            'other' => 'Autre',
+            default => null,
         };
     }
 
@@ -140,8 +142,8 @@ class User extends Authenticatable
     /**
      * Filtre les utilisateurs ayant le rôle patient.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static> $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopePatients($query)
     {
@@ -151,8 +153,8 @@ class User extends Authenticatable
     /**
      * Filtre les utilisateurs ayant le rôle médecin.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static> $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeDoctors($query)
     {
@@ -162,8 +164,8 @@ class User extends Authenticatable
     /**
      * Filtre les utilisateurs ayant le rôle administrateur.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static> $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeAdmins($query)
     {
@@ -176,8 +178,6 @@ class User extends Authenticatable
 
     /**
      * Vérifie si l'utilisateur est un administrateur.
-     *
-     * @return bool
      */
     public function isAdmin(): bool
     {
@@ -186,8 +186,6 @@ class User extends Authenticatable
 
     /**
      * Vérifie si l'utilisateur est un médecin.
-     *
-     * @return bool
      */
     public function isDoctor(): bool
     {
@@ -196,11 +194,35 @@ class User extends Authenticatable
 
     /**
      * Vérifie si l'utilisateur est un patient.
-     *
-     * @return bool
      */
     public function isPatient(): bool
     {
         return $this->role === 'patient';
+    }
+
+    /**
+     * Compte médecin dont le profil médical a été confirmé par un admin.
+     *
+     * Il n'existe pas de champ `approved` : la validation = existence
+     * de la ligne `doctors` liée à cet utilisateur.
+     */
+    public function hasDoctorProfile(): bool
+    {
+        return $this->isDoctor() && $this->doctor !== null;
+    }
+
+    /**
+     * Chemin du tableau de bord correspondant au rôle.
+     *
+     * Il n'existe pas de route générique `dashboard` : chaque rôle
+     * a son propre destination authentifiée.
+     */
+    public function dashboardPath(): string
+    {
+        return match ($this->role) {
+            'admin' => route('admin.dashboard', absolute: false),
+            'doctor' => route('doctor.dashboard', absolute: false),
+            default => route('patient.dashboard', absolute: false),
+        };
     }
 }
