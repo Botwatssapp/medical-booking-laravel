@@ -27,6 +27,17 @@ class GlobalUiTest extends TestCase
         $this->assertStringNotContainsString('500+', $html);
         $this->assertStringNotContainsString('10k+', $html);
         $this->assertStringNotContainsString('50k+', $html);
+        $this->assertStringNotContainsString('2,500+', $html);
+        $this->assertStringNotContainsString('Yassine', $html);
+        $this->assertStringNotContainsString('Benali', $html);
+        $this->assertStringNotContainsString('CNSS', $html);
+        $this->assertStringNotContainsString('HIPAA', $html);
+        $this->assertStringNotContainsString('CNDP', $html);
+        $this->assertStringNotContainsString('HDS', $html);
+        $this->assertStringNotContainsString('AES', $html);
+        $this->assertStringNotContainsString('karim.tazi', $html);
+        $this->assertStringNotContainsString('P-88219', $html);
+        $this->assertStringNotContainsString('Laravel', $html);
     }
 
     public function test_register_page_has_no_fake_marketing_stats(): void
@@ -43,6 +54,16 @@ class GlobalUiTest extends TestCase
         $this->assertStringNotContainsString('50k+', $html);
         $this->assertStringNotContainsString('des milliers', $html);
         $this->assertStringNotContainsString('4.9', $html);
+        $this->assertStringNotContainsString('150 000', $html);
+        $this->assertStringNotContainsString('4 500', $html);
+        $this->assertStringNotContainsString('CNSS', $html);
+        $this->assertStringNotContainsString('CNOPS', $html);
+        $this->assertStringNotContainsString('CNDP', $html);
+        $this->assertStringNotContainsString('HIPAA', $html);
+        $this->assertStringNotContainsString('HDS', $html);
+        $this->assertStringNotContainsString('AES', $html);
+        $this->assertStringNotContainsString('Yasmine', $html);
+        $this->assertStringNotContainsString('Laravel', $html);
     }
 
     public function test_guest_home_renders_login_not_welcome_or_dashboard(): void
@@ -62,12 +83,59 @@ class GlobalUiTest extends TestCase
             ->assertOk()
             ->assertSee('Mot de passe oublié')
             ->assertSee('SantéConnect')
-            ->assertSee('Adresse e-mail');
+            ->assertSee('Adresse e-mail')
+            ->assertSee('for="email"', false)
+            ->assertDontSee('Laravel')
+            ->assertDontSee('CNDP')
+            ->assertDontSee('HDS')
+            ->assertDontSee('AES 256')
+            ->assertDontSee('HIPAA')
+            ->assertDontSee('Cloudflare')
+            ->assertDontSee('15 minutes')
+            ->assertDontSee('05 22 89 00 00');
 
         $this->get(route('password.reset', ['token' => 'demo-token']))
             ->assertOk()
             ->assertSee('Nouveau mot de passe')
-            ->assertSee('SantéConnect');
+            ->assertSee('SantéConnect')
+            ->assertSee('Adresse e-mail')
+            ->assertSee('for="email"', false)
+            ->assertSee('Enregistrer le mot de passe')
+            ->assertDontSee('Laravel')
+            ->assertDontSee('CNDP')
+            ->assertDontSee('HDS')
+            ->assertDontSee('AES')
+            ->assertDontSee('HIPAA')
+            ->assertDontSee('Karim Tazi')
+            ->assertDontSee('TKN-8831')
+            ->assertDontSee('Atlas#2024Health!')
+            ->assertDontSee('Très Robuste')
+            ->assertDontSee('Zero-Knowledge')
+            ->assertDontSee('05 22 89 00 00')
+            ->assertDontSee('sante.ma');
+
+        $this->withSession([
+            'password_reset_confirmed' => true,
+            'password_reset_name' => 'Darion Murphy',
+            'password_reset_email' => 'darion@example.com',
+            'password_reset_role' => 'patient',
+        ])->get(route('password.updated'))
+            ->assertOk()
+            ->assertSee('Mot de passe modifié')
+            ->assertSee('Darion Murphy')
+            ->assertSee('d***@example.com')
+            ->assertSee('Se connecter')
+            ->assertDontSee('Laravel')
+            ->assertDontSee('CNDP')
+            ->assertDontSee('HDS')
+            ->assertDontSee('AES')
+            ->assertDontSee('HIPAA')
+            ->assertDontSee('Karim Tazi')
+            ->assertDontSee('05 22 89 00 00')
+            ->assertDontSee('MA-739201')
+            ->assertDontSee('8F2a-99X')
+            ->assertDontSee('Argon2id')
+            ->assertDontSee('sante.ma');
     }
 
     public function test_patient_layout_has_skip_link_and_active_navigation(): void
@@ -147,5 +215,49 @@ class GlobalUiTest extends TestCase
             ->assertOk()
             ->assertSee('Accepté')
             ->assertSee('Statut : Accepté');
+    }
+
+    public function test_landing_uses_real_counts_and_hides_fake_marketing(): void
+    {
+        $this->get(route('landing'))
+            ->assertOk()
+            ->assertSee('SantéConnect')
+            ->assertSee('Explorer les spécialités')
+            ->assertSee('Aucun avis patient n’est encore enregistré')
+            ->assertDontSee('Laravel')
+            ->assertDontSee('2,500+')
+            ->assertDontSee('98%')
+            ->assertDontSee('150,000+')
+            ->assertDontSee('4.9')
+            ->assertDontSee('Sarah Benali')
+            ->assertDontSee('Amina Mansouri')
+            ->assertDontSee('HIPAA')
+            ->assertDontSee('€60')
+            ->assertDontSee('View all 42');
+    }
+
+    public function test_two_factor_demo_page_is_visual_only(): void
+    {
+        $this->get(route('demo.two-factor'))
+            ->assertOk()
+            ->assertSee('Vérification en deux étapes')
+            ->assertSee('SantéConnect')
+            ->assertSee('Valider et accéder à mon Espace')
+            ->assertSee('Aucun SMS envoyé')
+            ->assertDontSee('Laravel')
+            ->assertDontSee('CNDP')
+            ->assertDontSee('HDS')
+            ->assertDontSee('AES')
+            ->assertDontSee('HIPAA')
+            ->assertDontSee('TLS')
+            ->assertDontSee('RGPD')
+            ->assertDontSee('Loi 09-08')
+            ->assertDontSee('05 22 89 00 00')
+            ->assertDontSee('Casablanca')
+            ->assertDontSee('k•••••@email.com')
+            ->assertDontSee('••••••••89')
+            ->assertDontSee('04:48')
+            ->assertDontSee('value="8"', false)
+            ->assertDontSee('value="4"', false);
     }
 }

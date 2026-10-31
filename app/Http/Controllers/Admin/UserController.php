@@ -26,28 +26,71 @@ class UserController extends Controller
      */
     public function index(Request $request): View
     {
+        $search = trim((string) $request->query('search', ''));
         $role = $request->query('role');
+        if (! in_array($role, ['patient', 'doctor', 'admin'], true)) {
+            $role = null;
+        }
+
+        $status = $request->query('status');
+        if (! in_array($status, ['pending', 'validated'], true)) {
+            $status = null;
+        }
+
+        $registered = $request->query('registered');
+        if (! is_string($registered) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $registered)) {
+            $registered = null;
+        }
 
         $allowedSorts = ['name', 'created_at'];
-        $sort      = in_array($request->query('sort'), $allowedSorts) ? $request->query('sort') : 'created_at';
+        $sort = in_array($request->query('sort'), $allowedSorts, true) ? $request->query('sort') : 'created_at';
         $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
 
-        $users = User::with('doctor')
-            ->when(
-                $role && in_array($role, ['patient', 'doctor', 'admin']),
-                fn ($q) => $q->where('role', $role)
-            )
+        $users = User::query()
+            ->with('doctor')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($inner) use ($search) {
+                    $inner->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('email', 'like', '%'.$search.'%')
+                        ->orWhere('phone', 'like', '%'.$search.'%');
+                });
+            })
+            ->when($role, fn ($query) => $query->where('role', $role))
+            ->when($status === 'pending', function ($query) {
+                $query->where('role', 'doctor')->doesntHave('doctor');
+            })
+            ->when($status === 'validated', function ($query) {
+                $query->where('role', 'doctor')->has('doctor');
+            })
+            ->when($registered, fn ($query) => $query->whereDate('created_at', $registered))
             ->orderBy($sort, $direction)
             ->paginate(15)
             ->withQueryString();
 
-        // Comptes médecins en attente de validation (rôle doctor, pas encore de profil)
         $pendingDoctors = User::doctors()
             ->doesntHave('doctor')
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('created_at')
             ->get();
 
-        return view('admin.users.index', compact('users', 'role', 'pendingDoctors'));
+        $stats = [
+            'total' => User::query()->count(),
+            'patients' => User::patients()->count(),
+            'doctors' => User::doctors()->count(),
+            'admins' => User::admins()->count(),
+            'pending' => $pendingDoctors->count(),
+            'validatedDoctors' => User::doctors()->has('doctor')->count(),
+        ];
+
+        $filters = [
+            'search' => $search,
+            'role' => $role,
+            'status' => $status,
+            'registered' => $registered,
+            'sort' => $sort,
+            'direction' => $direction,
+        ];
+
+        return view('admin.users.index', compact('users', 'role', 'pendingDoctors', 'stats', 'filters'));
     }
 
     /**
@@ -73,6 +116,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'email', 'unique:users,email'],
+            'phone'    => ['nullable', 'string', 'max:30'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'role'     => ['required', Rule::in(['patient', 'doctor', 'admin'])],
         ]);
@@ -80,9 +124,15 @@ class UserController extends Controller
         User::create([
             'name'     => $validated['name'],
             'email'    => $validated['email'],
+            'phone'    => $validated['phone'] ?? null,
             'password' => Hash::make($validated['password']),
             'role'     => $validated['role'],
         ]);
+
+        if ($request->boolean('add_another')) {
+            return redirect()->route('admin.users.create')
+                ->with('success', 'Utilisateur créé avec succès.');
+        }
 
         return redirect()->route('admin.users.index')
             ->with('success', 'Utilisateur créé avec succès.');
@@ -96,7 +146,12 @@ class UserController extends Controller
      */
     public function edit(User $user): View
     {
-        return view('admin.users.edit', compact('user'));
+        $user->load('doctor.speciality');
+        $appointmentCount = $user->isPatient()
+            ? $user->appointments()->count()
+            : 0;
+
+        return view('admin.users.edit', compact('user', 'appointmentCount'));
     }
 
     /**
@@ -112,10 +167,18 @@ class UserController extends Controller
     public function update(Request $request, User $user): RedirectResponse
     {
         $validated = $request->validate([
-            'name'  => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
-            'role'  => ['required', Rule::in(['patient', 'doctor', 'admin'])],
+            'name'     => ['required', 'string', 'max:255'],
+            'email'    => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone'    => ['nullable', 'string', 'max:30'],
+            'role'     => ['required', Rule::in(['patient', 'doctor', 'admin'])],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);
+
+        if (blank($validated['password'] ?? null)) {
+            unset($validated['password']);
+        } else {
+            $validated['password'] = Hash::make($validated['password']);
+        }
 
         $user->update($validated);
 

@@ -14,6 +14,8 @@ use App\Http\Controllers\Patient\AppointmentController as PatientAppointment;
 use App\Http\Controllers\Patient\DashboardController as PatientDashboard;
 use App\Http\Controllers\Patient\DoctorController as PatientDoctor;
 use App\Http\Controllers\Patient\NotificationController as PatientNotification;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Patient\ProfileController as PatientProfile;
 use Illuminate\Support\Facades\Route;
 
@@ -34,8 +36,11 @@ Route::get('/', function () {
         return redirect(auth()->user()->dashboardPath());
     }
 
-    return view('auth.login');
+    return app(AuthenticatedSessionController::class)->create();
 })->name('home');
+
+Route::get('/accueil', [LandingController::class, 'index'])->name('landing');
+Route::view('/demo/verification', 'demo.two-factor')->name('demo.two-factor')->middleware('guest');
 
 // Fallback GET /logout → redirige vers login sans erreur 405
 Route::get('/logout', fn () => redirect()->route('login'))->name('logout.get');

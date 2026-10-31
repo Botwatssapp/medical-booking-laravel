@@ -3,7 +3,7 @@
 @section('page-subtitle', 'Référentiel utilisé pour classer les médecins')
 
 @section('admin-content')
-<div class="max-w-2xl space-y-5">
+<div class="sc-stack max-w-2xl">
 
     <a href="{{ route('admin.specialties.index') }}"
        class="inline-flex items-center gap-1.5 text-sm text-[#526069] hover:text-[#003f87]">

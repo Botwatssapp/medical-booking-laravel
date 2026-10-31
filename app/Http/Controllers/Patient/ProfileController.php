@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Patient;
 
 use App\Http\Controllers\Controller;
+use App\Models\Appointment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -13,7 +14,12 @@ class ProfileController extends Controller
 {
     public function edit(): View
     {
-        return view('patient.profile.edit', ['user' => auth()->user()]);
+        $user = auth()->user();
+        $completedAppointments = $user->appointments()
+            ->where('status', Appointment::STATUS_COMPLETED)
+            ->count();
+
+        return view('patient.profile.edit', compact('user', 'completedAppointments'));
     }
 
     public function update(Request $request): RedirectResponse

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAvailabilityRequest;
 use App\Models\Availability;
 use App\Services\AvailabilityService;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -49,7 +50,16 @@ class AvailabilityController extends Controller
             'booked' => (int) ($counts->booked ?? 0),
         ];
 
-        return view('doctor.availabilities.index', compact('availabilities', 'stats'));
+        $weekStart = now()->startOfWeek(Carbon::MONDAY)->startOfDay();
+        $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
+        $weekSlots = $doctor->availabilities()
+            ->whereDate('date', '>=', $weekStart->toDateString())
+            ->whereDate('date', '<=', $weekEnd->toDateString())
+            ->orderBy('date')
+            ->orderBy('start_time')
+            ->get();
+
+        return view('doctor.availabilities.index', compact('availabilities', 'stats', 'weekStart', 'weekSlots'));
     }
 
     /**
@@ -59,7 +69,21 @@ class AvailabilityController extends Controller
     {
         $this->authorize('create', Availability::class);
 
-        return view('doctor.availabilities.create');
+        $doctor = auth()->user()->doctor()->with(['user', 'speciality'])->firstOrFail();
+
+        $existingSlots = $doctor->availabilities()
+            ->whereDate('date', '>', now()->toDateString())
+            ->orderBy('date')
+            ->orderBy('start_time')
+            ->get(['date', 'start_time', 'end_time'])
+            ->map(fn (Availability $slot) => [
+                'date' => $slot->date->toDateString(),
+                'start' => substr((string) $slot->start_time, 0, 5),
+                'end' => substr((string) $slot->end_time, 0, 5),
+            ])
+            ->values();
+
+        return view('doctor.availabilities.create', compact('doctor', 'existingSlots'));
     }
 
     /**

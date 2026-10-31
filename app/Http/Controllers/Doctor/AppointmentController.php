@@ -23,7 +23,17 @@ class AppointmentController extends Controller
             abort(403, 'Votre profil médecin n\'est pas encore validé.');
         }
 
-        $query = $doctor->appointments()->with(['patient', 'availability']);
+        $base = $doctor->appointments();
+        $stats = [
+            'total' => (clone $base)->count(),
+            'today' => (clone $base)->whereDate('appointment_date', now()->toDateString())->count(),
+            'pending' => (clone $base)->pending()->count(),
+            'accepted' => (clone $base)->accepted()->count(),
+            'completed' => (clone $base)->completed()->count(),
+            'cancelled' => (clone $base)->cancelled()->count(),
+            'missed' => (clone $base)->missed()->count(),
+            'rejected' => (clone $base)->rejected()->count(),
+        ];
 
         $allowedStatuses = [
             Appointment::STATUS_PENDING,
@@ -34,14 +44,37 @@ class AppointmentController extends Controller
             Appointment::STATUS_MISSED,
         ];
 
-        if ($request->filled('status') && in_array($request->status, $allowedStatuses, true)) {
-            $query->where('status', $request->status);
+        $status = (string) $request->query('status', '');
+        $search = trim((string) $request->query('search', ''));
+        $date = (string) $request->query('date', '');
+        if ($date !== '' && ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            $date = '';
+        }
+
+        $query = $doctor->appointments()->with(['patient', 'availability']);
+
+        if ($status === 'today') {
+            $query->whereDate('appointment_date', now()->toDateString());
+        } elseif (in_array($status, $allowedStatuses, true)) {
+            $query->where('status', $status);
+        } else {
+            $status = '';
+        }
+
+        if ($search !== '') {
+            $query->whereHas('patient', function ($patients) use ($search) {
+                $patients->where('name', 'like', '%'.$search.'%');
+            });
+        }
+
+        if ($date !== '') {
+            $query->whereDate('appointment_date', $date);
         }
 
         $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
         $appointments = $query->orderBy('appointment_date', $direction)->paginate(15)->withQueryString();
 
-        return view('doctor.appointments.index', compact('appointments'));
+        return view('doctor.appointments.index', compact('appointments', 'stats', 'status', 'search', 'date', 'direction'));
     }
 
     public function show(Appointment $appointment): View

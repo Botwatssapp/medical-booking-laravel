@@ -4,24 +4,50 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        @include('partials.head-icons')
         <title>SantéConnect — {{ $title ?? 'Espace sécurisé' }}</title>
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <style>[x-cloak]{display:none!important}</style>
     </head>
-    <body class="font-sans text-[#0d1c2f] antialiased bg-[#f8f9ff]">
+    <body class="font-sans text-[#0b1220] antialiased bg-[#f5f7fb]" x-data="scDemo()">
         <a href="#guest-content" class="sc-skip-link">Aller au contenu</a>
-        <div class="min-h-screen flex flex-col sm:justify-center items-center py-8 px-4">
-            <a href="{{ route('home') }}" class="flex items-center gap-2 mb-6">
-                <span class="w-10 h-10 bg-[#003f87] rounded-xl flex items-center justify-center">
-                    <span class="material-symbols-outlined text-white text-xl" aria-hidden="true">favorite</span>
-                </span>
-                <span class="text-xl font-bold text-[#003f87]">SantéConnect</span>
-            </a>
+        @include('partials.auth-header')
 
-            <div id="guest-content" class="w-full sm:max-w-md sc-card px-6 py-8">
-                {{ $slot }}
-            </div>
+        <div class="min-h-[calc(100vh-4rem)] grid grid-cols-1 lg:grid-cols-2">
+            <aside class="relative hidden lg:flex flex-col justify-between p-10 xl:p-14 bg-gradient-to-br from-[#0b1220] via-[#12315f] to-[#2563eb] text-white">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-[0.2em] text-white/60">Espace médical sécurisé</p>
+                    <h2 class="mt-4 text-3xl xl:text-4xl font-extrabold leading-tight">
+                        Protection de vos données et de vos rendez-vous.
+                    </h2>
+                    <p class="mt-4 text-white/70 max-w-md text-sm leading-relaxed">
+                        Réinitialisation par e-mail Laravel, session chiffrée côté serveur, et aucun secret affiché dans l’interface.
+                    </p>
+                </div>
+                <div class="space-y-3">
+                    @foreach([
+                        ['icon' => 'link', 'title' => 'Lien à usage unique', 'text' => 'Le lien de réinitialisation expire automatiquement.'],
+                        ['icon' => 'verified_user', 'title' => 'Compte existant uniquement', 'text' => 'Un e-mail n’est envoyé que si le compte existe.'],
+                        ['icon' => 'support_agent', 'title' => 'Assistance', 'text' => 'En cas de souci, reconnectez-vous ou créez un compte.'],
+                    ] as $item)
+                        <div class="rounded-2xl bg-white/10 border border-white/10 p-4">
+                            <p class="font-semibold flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">{{ $item['icon'] }}</span>
+                                {{ $item['title'] }}
+                            </p>
+                            <p class="text-sm text-white/70 mt-1">{{ $item['text'] }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            </aside>
+
+            <main id="guest-content" class="flex items-center justify-center px-4 sm:px-6 lg:px-8 py-10">
+                <div class="w-full max-w-md sc-card p-6 sm:p-8">
+                    {{ $slot }}
+                </div>
+            </main>
         </div>
+        @include('partials.demo-toast')
     </body>
 </html>

@@ -19,8 +19,11 @@ class ProfileController extends Controller
         $user = auth()->user();
         $doctor = $user->doctor;
         $doctor?->load('speciality');
+        $completedCount = $doctor
+            ? $doctor->appointments()->completed()->count()
+            : 0;
 
-        return view('doctor.profile.edit', compact('user', 'doctor'));
+        return view('doctor.profile.edit', compact('user', 'doctor', 'completedCount'));
     }
 
     public function update(UpdateDoctorProfileRequest $request): RedirectResponse

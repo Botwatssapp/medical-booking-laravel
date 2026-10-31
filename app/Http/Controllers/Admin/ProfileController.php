@@ -15,6 +15,7 @@ class ProfileController extends Controller
     public function edit(): View
     {
         $user = auth()->user();
+
         return view('admin.profile.edit', compact('user'));
     }
 
@@ -22,38 +23,43 @@ class ProfileController extends Controller
     {
         $user = auth()->user();
 
-        $validated = $request->validate([
-            'name'             => ['required', 'string', 'max:255'],
-            'email'            => ['required', 'email', Rule::unique('users')->ignore($user->id)],
-            'profile_image'    => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
-            'current_password' => ['nullable', 'string'],
-            'password'         => ['nullable', 'string', 'min:8', 'confirmed'],
-        ]);
+        if ($request->boolean('update_password') || $request->filled('current_password')) {
+            $validated = $request->validate([
+                'current_password' => ['required', 'current_password'],
+                'password' => ['required', 'string', 'min:8', 'confirmed'],
+            ]);
 
-        // Password change
-        if ($request->filled('current_password')) {
-            if (!Hash::check($request->current_password, $user->password)) {
-                return back()->withErrors(['current_password' => 'Mot de passe actuel incorrect.'])->withInput();
-            }
-            if ($request->filled('password')) {
-                $user->update(['password' => Hash::make($validated['password'])]);
-            }
+            $user->update([
+                'password' => Hash::make($validated['password']),
+            ]);
+
+            return redirect()->route('admin.profile.edit')
+                ->with('success', 'Mot de passe mis à jour.');
         }
 
-        // Profile image
+        if ($request->filled('first_name')) {
+            $request->merge([
+                'name' => trim($request->input('first_name').' '.$request->input('last_name')),
+            ]);
+        }
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+        ]);
+
         if ($request->hasFile('profile_image')) {
             if ($user->profile_image) {
                 Storage::disk('public')->delete($user->profile_image);
             }
-            $user->update([
-                'profile_image' => $request->file('profile_image')->store('profile/image', 'public'),
-            ]);
+            $validated['profile_image'] = $request->file('profile_image')->store('profile/image', 'public');
+        } else {
+            unset($validated['profile_image']);
         }
 
-        $user->update([
-            'name'  => $validated['name'],
-            'email' => $validated['email'],
-        ]);
+        $user->update($validated);
 
         return redirect()->route('admin.profile.edit')
             ->with('success', 'Profil mis à jour avec succès.');

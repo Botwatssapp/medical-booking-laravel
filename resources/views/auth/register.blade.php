@@ -3,298 +3,275 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    @include('partials.head-icons')
     <title>SantéConnect — Inscription</title>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <style>
-        body { background: #050e1d; }
-        .bg-dots {
-            background-image: radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px);
-            background-size: 28px 28px;
-        }
-        input:-webkit-autofill,
-        input:-webkit-autofill:focus {
-            -webkit-box-shadow: 0 0 0 1000px #0f1e35 inset;
-            -webkit-text-fill-color: #fff;
-        }
-        .role-card { transition: all 0.2s; cursor: pointer; }
-        .role-card:has(input:checked) {
-            border-color: #3b82f6;
-            background: rgba(59,130,246,0.12);
-        }
-        .role-card:has(input:checked) .role-icon {
-            background: rgba(59,130,246,0.25);
-            color: #93c5fd;
-        }
-        .role-card:has(input:checked) .role-title { color: #fff; }
-        .role-check {
-            opacity: 0; transition: opacity 0.15s;
-        }
-        .role-card:has(input:checked) .role-check { opacity: 1; }
-    </style>
+    <style>[x-cloak]{display:none!important}</style>
 </head>
-<body class="min-h-screen bg-dots flex items-center justify-center py-6 px-4 relative overflow-x-hidden">
+<body class="bg-[#faf8ff] font-sans text-[#131b2e] min-h-screen flex flex-col justify-between selection:bg-[#dbe1ff] selection:text-[#00174b]"
+      x-data="scDemo()">
+    <a href="#register-form" class="sc-skip-link">Aller au contenu</a>
 
-    {{-- Orbs --}}
-    <div class="fixed top-[-10%] right-[-10%]  w-[550px] h-[550px] bg-[#003f87] rounded-full opacity-[0.16] blur-[130px] pointer-events-none"></div>
-    <div class="fixed bottom-[-20%] left-[-8%] w-[500px] h-[500px] bg-[#0a4d35] rounded-full opacity-[0.13] blur-[110px] pointer-events-none"></div>
-
-    <div class="w-full max-w-[1040px] grid grid-cols-1 lg:grid-cols-2 rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.5)] border border-white/8 my-6">
-
-        {{-- ══ Panneau gauche — Formulaire ══ --}}
-        <div class="bg-[#080f1c] flex items-center justify-center p-8 lg:p-10 xl:p-12 order-2 lg:order-1">
-            <div class="w-full max-w-[360px]">
-
-                {{-- Logo mobile --}}
-                <a href="{{ route('home') }}" class="flex items-center gap-2 mb-8 lg:hidden">
-                    <div class="w-8 h-8 bg-[#003f87] rounded-lg flex items-center justify-center">
-                        <span class="material-symbols-outlined text-white text-base">favorite</span>
-                    </div>
-                    <span class="text-white font-bold">SantéConnect</span>
-                </a>
-
-                <div class="mb-7">
-                    <p class="text-xs font-bold uppercase tracking-widest text-[#3b82f6] mb-3">Inscription</p>
-                    <h2 class="text-2xl font-bold text-white mb-1.5">Créez votre compte</h2>
-                    <p class="text-white/40 text-sm">Rejoignez SantéConnect en quelques secondes</p>
+    <header class="fixed top-0 w-full z-50 bg-[#faf8ff]/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.03)]">
+        <div class="h-16 sm:h-20 sc-page-wide flex items-center justify-between gap-3">
+            <a href="{{ route('landing') }}" class="flex items-center gap-3 min-w-0">
+                <span class="w-8 h-8 rounded-lg bg-[#2563eb] text-white flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[18px]" aria-hidden="true">favorite</span>
+                </span>
+                <span class="flex flex-col min-w-0">
+                    <span class="font-display text-[16px] leading-6 font-bold tracking-tight truncate">SantéConnect</span>
+                    <span class="text-[11px] text-[#434655] leading-none">Espace médical</span>
+                </span>
+            </a>
+            <div class="flex items-center gap-4 lg:gap-6">
+                <div class="hidden sm:flex items-center gap-1 bg-[#ffdad6] text-[#93000a] px-3 py-1.5 rounded-full">
+                    <span class="material-symbols-outlined text-[16px]" aria-hidden="true">emergency</span>
+                    <span class="text-[12px] uppercase tracking-wider font-semibold">Urgence : 15 · 112</span>
                 </div>
+                <nav class="flex md:hidden items-center gap-2" aria-label="Navigation authentification mobile">
+                    <a href="{{ route('login') }}" class="text-xs font-semibold text-[#004ac6]">Connexion</a>
+                    <a href="{{ route('landing') }}" class="text-xs font-semibold text-[#434655]">Accueil</a>
+                </nav>
+                <nav class="hidden md:flex items-center gap-4" aria-label="Navigation authentification">
+                    <a href="{{ route('login') }}" class="text-[14px] font-semibold text-[#434655] hover:text-[#131b2e]">Connexion</a>
+                    <a href="{{ route('register') }}" class="text-[14px] font-semibold text-[#004ac6]" aria-current="page">Créer un compte</a>
+                    <a href="{{ route('landing') }}" class="text-[14px] font-semibold text-[#434655] hover:text-[#131b2e]">Retour au site</a>
+                </nav>
+                <span class="hidden sm:flex w-8 h-8 rounded-full bg-[#004ac6] items-center justify-center" aria-hidden="true">
+                    <span class="material-symbols-outlined text-white text-[18px]">person</span>
+                </span>
+            </div>
+        </div>
+    </header>
 
-                {{-- Erreurs --}}
-                @if($errors->any())
-                    <div class="border border-red-500/30 bg-red-500/10 rounded-xl px-4 py-3 mb-6 flex items-start gap-3" role="alert">
-                        <span class="material-symbols-outlined text-red-400 text-base shrink-0 mt-0.5" aria-hidden="true">error</span>
+    <main class="w-full pt-16 sm:pt-20 flex-1 flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8" x-data="{ role: '{{ old('role', 'patient') }}', showPw: false, password: '' }">
+        <div class="w-full max-w-[1360px] mx-auto py-6 lg:py-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                <section class="lg:col-span-5 flex flex-col justify-between p-6 lg:p-8 rounded-xl bg-gradient-to-br from-[#004ac6] via-[#2563eb] to-[#006a61] text-white shadow-xl relative overflow-hidden">
+                    <div class="absolute -right-16 -top-16 w-72 h-72 rounded-full bg-white/10 blur-3xl pointer-events-none"></div>
+                    <div class="absolute -left-12 bottom-12 w-60 h-60 rounded-full bg-[#89f5e7]/20 blur-2xl pointer-events-none"></div>
+                    <div class="relative z-10 flex flex-col gap-6">
+                        <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md self-start shadow-sm">
+                            <span class="material-symbols-outlined text-[18px] text-[#6ffbbe]" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">verified</span>
+                            <span class="text-[12px] tracking-wide font-semibold uppercase">{{ $doctorCount }} médecin{{ $doctorCount > 1 ? 's' : '' }} validé{{ $doctorCount > 1 ? 's' : '' }}</span>
+                        </div>
                         <div>
+                            <h1 class="font-display text-[32px] lg:text-[40px] leading-10 lg:leading-[48px] font-bold tracking-tight">
+                                Créez votre compte pour réserver ou gérer des créneaux.
+                            </h1>
+                            <p class="text-[15px] leading-6 text-white/85 mt-2">
+                                Un compte patient peut demander un rendez-vous. Un compte médecin attend la validation d’un administrateur.
+                            </p>
+                        </div>
+                        <div class="flex flex-col gap-4">
+                            <div class="flex items-start gap-4 p-3.5 rounded-lg bg-white/10">
+                                <div class="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                                    <span class="material-symbols-outlined text-[22px]" aria-hidden="true">person</span>
+                                </div>
+                                <div>
+                                    <p class="font-display text-[16px] leading-6 font-semibold">Compte patient</p>
+                                    <p class="text-[13px] leading-5 text-white/80 mt-0.5">Recherche de médecins validés et demandes sur créneaux libres.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-4 p-3.5 rounded-lg bg-white/10">
+                                <div class="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                                    <span class="material-symbols-outlined text-[22px]" aria-hidden="true">stethoscope</span>
+                                </div>
+                                <div>
+                                    <p class="font-display text-[16px] leading-6 font-semibold">Compte médecin</p>
+                                    <p class="text-[13px] leading-5 text-white/80 mt-0.5">L’agenda n’apparaît qu’après validation administrative. Aucun cabinet n’est créé ici.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-4 p-3.5 rounded-lg bg-white/10">
+                                <div class="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                                    <span class="material-symbols-outlined text-[22px]" aria-hidden="true">mail</span>
+                                </div>
+                                <div>
+                                    <p class="font-display text-[16px] leading-6 font-semibold">E-mail uniquement</p>
+                                    <p class="text-[13px] leading-5 text-white/80 mt-0.5">Aucun SMS, WhatsApp, mutuelle ou dossier familial n’est enregistré à l’inscription.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-4 p-3.5 rounded-lg bg-white/10">
+                                <div class="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                                    <span class="material-symbols-outlined text-[22px]" aria-hidden="true">event_available</span>
+                                </div>
+                                <div>
+                                    <p class="font-display text-[16px] leading-6 font-semibold">Demande en attente</p>
+                                    <p class="text-[13px] leading-5 text-white/80 mt-0.5">Un rendez-vous n’est pas confirmé instantanément. La téléconsultation n’est pas gérée.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative z-10 pt-6 mt-6 border-t border-white/15 text-[11px] text-white/80">
+                        <p class="flex items-center gap-2 text-white">
+                            <span class="material-symbols-outlined text-[#89f5e7] text-[20px]" aria-hidden="true">lock</span>
+                            Session protégée côté serveur
+                        </p>
+                        <p class="mt-1">Aucune certification externe n’est affichée ici. Urgence vitale : 15 ou 112.</p>
+                    </div>
+                </section>
+
+                <section class="lg:col-span-7 bg-white rounded-xl p-6 lg:p-8 shadow-lg flex flex-col">
+                    <div class="flex items-center justify-between flex-wrap gap-3 pb-2">
+                        <div class="inline-flex p-1 bg-[#f2f3ff] rounded-lg">
+                            <button type="button" class="flex items-center gap-1.5 px-4 py-2 rounded-md text-[12px] font-semibold"
+                                    :class="role === 'patient' ? 'bg-[#004ac6] text-white shadow-sm' : 'text-[#434655]'"
+                                    @click="role = 'patient'">
+                                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">person</span>
+                                Compte Patient
+                            </button>
+                            <button type="button" class="flex items-center gap-1.5 px-4 py-2 rounded-md text-[12px] font-semibold"
+                                    :class="role === 'doctor' ? 'bg-[#006a61] text-white shadow-sm' : 'text-[#434655]'"
+                                    @click="role = 'doctor'">
+                                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">medical_services</span>
+                                Médecin / Clinique
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-[#006a61] text-[12px] font-semibold bg-[#86f2e4]/30 px-3 py-1.5 rounded-full">
+                            <span class="material-symbols-outlined text-[16px]" aria-hidden="true">info</span>
+                            Champs réellement enregistrés
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <h2 class="font-display text-[24px] md:text-[28px] leading-8 md:leading-9 font-bold tracking-tight" x-text="role === 'doctor' ? 'Créer votre compte médecin' : 'Créer votre compte patient'"></h2>
+                        <p class="text-[15px] leading-6 text-[#434655] mt-1">
+                            Les champs ci-dessous sont ceux réellement enregistrés : nom, e-mail, mot de passe et rôle.
+                        </p>
+                    </div>
+
+                    @if($errors->any())
+                        <div class="border border-red-200 bg-red-50 rounded-xl px-4 py-3 mt-4" role="alert">
                             @foreach($errors->all() as $error)
-                                <p class="text-sm text-red-300">{{ $error }}</p>
+                                <p class="text-sm text-red-700">{{ $error }}</p>
                             @endforeach
                         </div>
-                    </div>
-                @endif
+                    @endif
 
-                <form action="{{ route('register') }}" method="POST" class="space-y-5">
-                    @csrf
-
-                    {{-- ── Sélecteur de rôle ── --}}
-                    <fieldset>
-                        <legend class="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-3">
-                            Je suis <span class="text-red-400" aria-hidden="true">*</span>
-                        </legend>
-                        <div class="grid grid-cols-2 gap-3">
-
-                            {{-- Patient --}}
-                            <label class="role-card relative border border-white/10 rounded-xl p-4 bg-white/4 hover:border-white/20">
-                                <input type="radio" name="role" value="patient" class="sr-only"
-                                       {{ old('role', 'patient') === 'patient' ? 'checked' : '' }}>
-                                <div class="flex flex-col items-center gap-2.5 text-center">
-                                    <div class="role-icon w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white/50 transition-all">
-                                        <span class="material-symbols-outlined text-xl">person</span>
-                                    </div>
-                                    <div>
-                                        <p class="role-title text-sm font-semibold text-white/60 transition-colors">Patient</p>
-                                        <p class="text-[11px] text-white/30 mt-0.5">Prendre RDV</p>
-                                    </div>
-                                </div>
-                                <span class="role-check absolute top-2.5 right-2.5 w-4 h-4 bg-[#3b82f6] rounded-full flex items-center justify-center">
-                                    <span class="material-symbols-outlined text-white text-[10px]">check</span>
-                                </span>
-                            </label>
-
-                            {{-- Médecin --}}
-                            <label class="role-card relative border border-white/10 rounded-xl p-4 bg-white/4 hover:border-white/20">
-                                <input type="radio" name="role" value="doctor" class="sr-only"
-                                       {{ old('role') === 'doctor' ? 'checked' : '' }}>
-                                <div class="flex flex-col items-center gap-2.5 text-center">
-                                    <div class="role-icon w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white/50 transition-all">
-                                        <span class="material-symbols-outlined text-xl">stethoscope</span>
-                                    </div>
-                                    <div>
-                                        <p class="role-title text-sm font-semibold text-white/60 transition-colors">Médecin</p>
-                                        <p class="text-[11px] text-white/30 mt-0.5">Gérer les RDV</p>
-                                    </div>
-                                </div>
-                                <span class="role-check absolute top-2.5 right-2.5 w-4 h-4 bg-[#3b82f6] rounded-full flex items-center justify-center">
-                                    <span class="material-symbols-outlined text-white text-[10px]">check</span>
-                                </span>
-                            </label>
-                        </div>
-                    </fieldset>
-
-                    {{-- Nom --}}
-                    <div>
-                        <label for="name" class="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
-                            Nom complet <span class="text-red-400" aria-hidden="true">*</span>
-                        </label>
-                        <div class="relative">
-                            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25 text-[18px]" aria-hidden="true">badge</span>
-                            <input type="text" id="name" name="name" value="{{ old('name') }}"
-                                   placeholder="Jean Dupont" required autocomplete="name"
-                                   class="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder-white/20
-                                          focus:outline-none focus:border-[#3b82f6]/60 focus:ring-1 focus:ring-[#3b82f6]/30 transition-all">
-                        </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-6">
+                        <button type="button" class="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-[#f2f3ff] hover:bg-[#eaedff] text-[14px] font-semibold shadow-sm"
+                                @click="simulateOauth('Google')">
+                            Continuer avec Google
+                        </button>
+                        <button type="button" class="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-[#f2f3ff] hover:bg-[#eaedff] text-[14px] font-semibold shadow-sm"
+                                @click="simulateOauth('Apple')">
+                            Continuer avec Apple
+                        </button>
                     </div>
 
-                    {{-- Email --}}
-                    <div>
-                        <label for="email" class="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
-                            Adresse e-mail <span class="text-red-400" aria-hidden="true">*</span>
-                        </label>
-                        <div class="relative">
-                            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25 text-[18px]" aria-hidden="true">mail</span>
-                            <input type="email" id="email" name="email" value="{{ old('email') }}"
-                                   placeholder="jean.dupont@email.com" required autocomplete="username"
-                                   class="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder-white/20
-                                          focus:outline-none focus:border-[#3b82f6]/60 focus:ring-1 focus:ring-[#3b82f6]/30 transition-all">
-                        </div>
+                    <div class="relative flex items-center justify-center my-4">
+                        <div class="w-full h-px bg-[#c3c6d7]/40"></div>
+                        <span class="absolute px-3 bg-white text-[11px] text-[#434655] uppercase tracking-wider">ou avec vos coordonnées</span>
                     </div>
 
-                    {{-- Mot de passe --}}
-                    <div>
-                        <label for="pw" class="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
-                            Mot de passe <span class="text-red-400" aria-hidden="true">*</span>
-                        </label>
-                        <div class="relative">
-                            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25 text-[18px]" aria-hidden="true">lock</span>
-                            <input type="password" name="password" id="pw"
-                                   placeholder="Minimum 8 caractères" required autocomplete="new-password"
-                                   class="w-full pl-10 pr-11 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder-white/20
-                                          focus:outline-none focus:border-[#3b82f6]/60 focus:ring-1 focus:ring-[#3b82f6]/30 transition-all">
-                            <button type="button" id="toggle-pw"
-                                    class="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/60 transition-colors"
-                                    aria-label="Afficher le mot de passe"
-                                    aria-controls="pw">
-                                <span class="material-symbols-outlined text-[18px]" id="eye-icon" aria-hidden="true">visibility</span>
+                    <form id="register-form" action="{{ route('register') }}" method="POST" class="flex flex-col gap-6">
+                        @csrf
+                        <input type="hidden" name="role" value="{{ old('role', 'patient') }}" x-bind:value="role">
+
+                        <div class="flex flex-col gap-3">
+                            <div class="flex items-center gap-2 text-[#004ac6] text-[14px] font-semibold">
+                                <span class="flex items-center justify-center w-5 h-5 rounded-full bg-[#dbe1ff] text-[#00174b] text-[11px] font-bold">1</span>
+                                Identité
+                            </div>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[12px] font-semibold" for="name">Nom complet <span class="text-[#ba1a1a]">*</span></label>
+                                <input class="w-full h-11 px-3.5 bg-[#f2f3ff] focus:bg-white rounded-lg text-[15px] focus:outline-none focus:ring-2 focus:ring-[#004ac6] shadow-sm"
+                                       id="name" name="name" type="text" value="{{ old('name') }}" required autocomplete="name" placeholder="ex. Jean Dupont">
+                            </div>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[12px] font-semibold" for="email">Adresse e-mail <span class="text-[#ba1a1a]">*</span></label>
+                                <input class="w-full h-11 px-3.5 bg-[#f2f3ff] focus:bg-white rounded-lg text-[15px] focus:outline-none focus:ring-2 focus:ring-[#004ac6] shadow-sm"
+                                       id="email" name="email" type="email" value="{{ old('email') }}" required autocomplete="username" placeholder="nom@exemple.com">
+                            </div>
+                            <button type="button" class="h-11 px-3 rounded-lg bg-[#f2f3ff] text-[13px] text-[#434655] text-left"
+                                    @click="showToast('Le téléphone n’est pas enregistré à l’inscription.')">
+                                Téléphone : non géré — utilisez l’e-mail
                             </button>
                         </div>
 
-                        {{-- Indicateur de force --}}
-                        <div class="flex gap-1 mt-2" id="strength-bars">
-                            <div class="h-1 flex-1 rounded-full bg-white/10" id="bar1"></div>
-                            <div class="h-1 flex-1 rounded-full bg-white/10" id="bar2"></div>
-                            <div class="h-1 flex-1 rounded-full bg-white/10" id="bar3"></div>
-                            <div class="h-1 flex-1 rounded-full bg-white/10" id="bar4"></div>
+                        <div class="flex flex-col gap-3">
+                            <div class="flex items-center gap-2 text-[#004ac6] text-[14px] font-semibold">
+                                <span class="flex items-center justify-center w-5 h-5 rounded-full bg-[#dbe1ff] text-[#00174b] text-[11px] font-bold">2</span>
+                                Sécurité du compte
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-[12px] font-semibold" for="pw">Mot de passe <span class="text-[#ba1a1a]">*</span></label>
+                                    <div class="relative flex items-center">
+                                        <input class="w-full h-11 pl-3.5 pr-10 bg-[#f2f3ff] focus:bg-white rounded-lg text-[15px] focus:outline-none focus:ring-2 focus:ring-[#004ac6] shadow-sm"
+                                               id="pw" name="password" :type="showPw ? 'text' : 'password'" x-model="password"
+                                               required autocomplete="new-password" placeholder="Minimum 8 caractères">
+                                        <button type="button" class="absolute right-3 text-[#434655]" @click="showPw = !showPw"
+                                                :aria-label="showPw ? 'Masquer le mot de passe' : 'Afficher le mot de passe'">
+                                            <span class="material-symbols-outlined text-[18px]" x-text="showPw ? 'visibility_off' : 'visibility'" aria-hidden="true"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-[12px] font-semibold" for="pw2">Confirmer le mot de passe <span class="text-[#ba1a1a]">*</span></label>
+                                    <input class="w-full h-11 px-3.5 bg-[#f2f3ff] focus:bg-white rounded-lg text-[15px] focus:outline-none focus:ring-2 focus:ring-[#004ac6] shadow-sm"
+                                           id="pw2" name="password_confirmation" type="password" required autocomplete="new-password" placeholder="Confirmez à l’identique">
+                                </div>
+                            </div>
+                            <div class="bg-[#f2f3ff]/60 p-3 rounded-lg">
+                                <div class="flex items-center justify-between text-[11px]">
+                                    <span class="text-[#434655]">Longueur du mot de passe</span>
+                                    <span class="font-semibold" :class="password.length >= 8 ? 'text-[#006a61]' : 'text-[#434655]'"
+                                          x-text="password.length >= 8 ? 'Au moins 8 caractères' : 'Minimum 8 caractères requis'"></span>
+                                </div>
+                                <div class="grid grid-cols-4 gap-1.5 h-1.5 w-full mt-2">
+                                    <div class="h-full rounded-full" :class="password.length >= 2 ? 'bg-[#006a61]' : 'bg-[#c3c6d7]'"></div>
+                                    <div class="h-full rounded-full" :class="password.length >= 4 ? 'bg-[#006a61]' : 'bg-[#c3c6d7]'"></div>
+                                    <div class="h-full rounded-full" :class="password.length >= 6 ? 'bg-[#006a61]' : 'bg-[#c3c6d7]'"></div>
+                                    <div class="h-full rounded-full" :class="password.length >= 8 ? 'bg-[#006a61]' : 'bg-[#c3c6d7]'"></div>
+                                </div>
+                                <p class="mt-2 text-[11px] text-[#434655] flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[14px]" :class="password.length >= 8 ? 'text-[#006a61]' : 'text-[#737686]'" aria-hidden="true">check_circle</span>
+                                    Le mot de passe doit contenir au moins 8 caractères.
+                                </p>
+                            </div>
                         </div>
-                    </div>
 
-                    {{-- Confirmer --}}
-                    <div>
-                        <label for="pw2" class="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
-                            Confirmer le mot de passe <span class="text-red-400" aria-hidden="true">*</span>
-                        </label>
-                        <div class="relative">
-                            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25 text-[18px]" aria-hidden="true">lock_open</span>
-                            <input type="password" name="password_confirmation" id="pw2"
-                                   placeholder="Répétez le mot de passe" required autocomplete="new-password"
-                                   class="w-full pl-10 pr-11 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder-white/20
-                                          focus:outline-none focus:border-[#3b82f6]/60 focus:ring-1 focus:ring-[#3b82f6]/30 transition-all">
-                            <span class="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-[18px] opacity-0 transition-opacity" id="match-icon"></span>
+                        <div class="p-3.5 rounded-lg bg-[#f2f3ff]/70">
+                            <p class="text-[14px] font-semibold">Couverture maladie</p>
+                            <p class="text-[13px] text-[#434655] mt-1">Aucune mutuelle n’est enregistrée ici. Le tiers-payant n’est pas géré.</p>
+                            <button type="button" class="mt-2 w-full h-11 px-3.5 bg-white rounded-lg text-[15px] text-left text-[#737686] shadow-sm"
+                                    @click="showToast('Aucune affiliation mutuelle n’est enregistrée.')">
+                                Affiliation non disponible
+                            </button>
                         </div>
-                    </div>
 
-                    {{-- Submit --}}
-                    <button type="submit"
-                            class="w-full py-3.5 bg-[#003f87] hover:bg-[#0052b3] text-white font-semibold rounded-xl
-                                   transition-all shadow-lg shadow-[#003f87]/20 mt-1
-                                   flex items-center justify-center gap-2">
-                        <span class="material-symbols-outlined text-[18px]">person_add</span>
-                        Créer mon compte
-                    </button>
-                </form>
+                        <p class="text-[13px] text-[#434655]">En créant un compte, vous utilisez SantéConnect pour prendre ou gérer des rendez-vous. Aucune politique externe n’est affichée ici.</p>
 
-                <div class="flex items-center gap-4 my-6">
-                    <div class="flex-1 h-px bg-white/8"></div>
-                    <span class="text-xs text-white/25">DÉJÀ INSCRIT ?</span>
-                    <div class="flex-1 h-px bg-white/8"></div>
-                </div>
+                        <button type="submit" class="w-full h-12 bg-[#004ac6] hover:bg-[#003ea8] text-white rounded-lg font-display text-[16px] font-semibold shadow-md flex items-center justify-center gap-2">
+                            <span>Créer mon compte</span>
+                            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">arrow_forward</span>
+                        </button>
 
-                <a href="{{ route('login') }}"
-                   class="w-full flex items-center justify-center gap-2 py-3 border border-white/10 rounded-xl
-                          text-white/55 hover:text-white hover:border-white/25 text-sm font-semibold transition-all">
-                    <span class="material-symbols-outlined text-[16px]">login</span>
-                    Se connecter
-                </a>
+                        <p class="text-center text-[15px] text-[#434655]">
+                            Vous possédez déjà un compte SantéConnect ?
+                            <a class="text-[#004ac6] font-semibold hover:underline inline-flex items-center" href="{{ route('login') }}">
+                                Se connecter
+                                <span class="material-symbols-outlined text-[16px]" aria-hidden="true">chevron_right</span>
+                            </a>
+                        </p>
+                    </form>
+                </section>
             </div>
         </div>
+    </main>
 
-        {{-- ══ Panneau droit — Branding ══ --}}
-        <div class="order-1 lg:order-2 bg-gradient-to-br from-[#001535] via-[#002d63] to-[#003f87] p-10 flex flex-col justify-between relative overflow-hidden min-h-[220px] lg:min-h-0">
-            <div class="absolute -top-20 -right-20 w-72 h-72 bg-white/5 rounded-full"></div>
-            <div class="absolute -bottom-16 -left-10 w-56 h-56 bg-white/4 rounded-full"></div>
-
-            <div class="relative z-10">
-                <a href="{{ route('home') }}" class="hidden lg:flex items-center gap-3 mb-14 group">
-                    <div class="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center group-hover:bg-white/25 transition-colors">
-                        <span class="material-symbols-outlined text-white text-xl">favorite</span>
-                    </div>
-                    <span class="text-white font-bold text-xl tracking-tight">SantéConnect</span>
-                </a>
-
-                <h2 class="text-3xl font-bold text-white leading-tight mb-4">
-                    Un espace<br>
-                    <span class="text-[#7eb8ff]">pour votre suivi</span><br>
-                    médical.
-                </h2>
-                <p class="text-white/55 text-sm leading-relaxed max-w-xs">
-                    Créez un compte patient pour réserver, ou un compte médecin pour gérer vos créneaux après validation.
-                </p>
-            </div>
-
-            <div class="relative z-10 space-y-3 mt-8">
-                @foreach([
-                    ['icon' => 'event_available', 'text' => 'Réservez un créneau disponible'],
-                    ['icon' => 'stethoscope',     'text' => 'Consultez les médecins validés'],
-                    ['icon' => 'notifications',   'text' => 'Suivez le statut de vos demandes'],
-                    ['icon' => 'manage_accounts', 'text' => 'Gérez votre profil en toute clarté'],
-                ] as $item)
-                    <div class="bg-white/8 border border-white/10 rounded-xl p-3.5 flex items-center gap-3">
-                        <span class="material-symbols-outlined text-[#7eb8ff] text-[18px]" aria-hidden="true">{{ $item['icon'] }}</span>
-                        <p class="text-white/80 text-sm">{{ $item['text'] }}</p>
-                    </div>
-                @endforeach
-            </div>
+    <footer class="w-full bg-[#f2f3ff] shadow-[0_-1px_6px_rgba(0,0,0,0.02)]">
+        <div class="max-w-[1360px] mx-auto px-4 lg:px-6 py-6 flex flex-col md:flex-row items-center justify-between gap-4 text-[12px] text-[#434655]">
+            <p class="flex items-center gap-1.5 text-[#006a61] font-semibold">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">health_and_safety</span>
+                Urgences : 15 / 112
+            </p>
+            <p>© {{ now()->year }} SantéConnect. Tous droits réservés.</p>
         </div>
-    </div>
-
-    <script>
-    // Toggle password
-    const btn  = document.getElementById('toggle-pw');
-    const icon = document.getElementById('eye-icon');
-    const pw   = document.getElementById('pw');
-    const pw2  = document.getElementById('pw2');
-    const matchIcon = document.getElementById('match-icon');
-
-    btn.addEventListener('click', () => {
-        const show = pw.type === 'password';
-        pw.type = show ? 'text' : 'password';
-        icon.textContent = show ? 'visibility_off' : 'visibility';
-    });
-
-    // Password strength
-    const bars = ['bar1','bar2','bar3','bar4'].map(id => document.getElementById(id));
-    const colors = ['bg-red-500','bg-orange-500','bg-yellow-400','bg-green-500'];
-
-    pw.addEventListener('input', () => {
-        const val = pw.value;
-        let score = 0;
-        if (val.length >= 8) score++;
-        if (/[A-Z]/.test(val)) score++;
-        if (/[0-9]/.test(val)) score++;
-        if (/[^A-Za-z0-9]/.test(val)) score++;
-        bars.forEach((b, i) => {
-            b.className = 'h-1 flex-1 rounded-full transition-all ' + (i < score ? colors[score - 1] : 'bg-white/10');
-        });
-        checkMatch();
-    });
-
-    // Match check
-    pw2.addEventListener('input', checkMatch);
-    function checkMatch() {
-        if (!pw2.value) { matchIcon.style.opacity = '0'; return; }
-        const match = pw.value === pw2.value;
-        matchIcon.textContent = match ? 'check_circle' : 'cancel';
-        matchIcon.className = 'material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-[18px] transition-opacity ' +
-                              (match ? 'text-green-400' : 'text-red-400');
-        matchIcon.style.opacity = '1';
-    }
-    </script>
+    </footer>
+    @include('partials.demo-toast')
 </body>
 </html>

@@ -16,8 +16,16 @@ class DoctorController extends Controller
     public function index(Request $request): View
     {
         $query = Doctor::query()
+            ->select('doctors.*')
             ->whereHas('user', fn ($q) => $q->where('role', 'doctor'))
-            ->with(['speciality', 'user'])
+            ->with([
+                'speciality',
+                'user',
+                'availabilities' => fn ($q) => $q->available()
+                    ->where('date', '<=', now()->addDays(14)->toDateString())
+                    ->orderBy('date')
+                    ->orderBy('start_time'),
+            ])
             ->withCount([
                 'availabilities as available_slots_count' => fn ($q) => $q->available(),
             ]);
@@ -40,6 +48,14 @@ class DoctorController extends Controller
             });
         }
 
+        $when = $request->query('when');
+        $window = $this->availabilityWindow(is_string($when) ? $when : null);
+        if ($window) {
+            $query->whereHas('availabilities', function ($q) use ($window) {
+                $q->available()->whereBetween('date', [$window[0], $window[1]]);
+            });
+        }
+
         $allowedSorts = ['name' => 'users.name', 'speciality' => 'specialities.name'];
         $sortKey = $request->query('sort', 'name');
         $sort = $allowedSorts[$sortKey] ?? 'users.name';
@@ -47,16 +63,30 @@ class DoctorController extends Controller
 
         $query->join('users', 'users.id', '=', 'doctors.user_id')
             ->join('specialities', 'specialities.id', '=', 'doctors.speciality_id')
-            ->select('doctors.*')
             ->orderBy($sort, $direction);
 
         $doctors = $query->paginate(12)->withQueryString();
         $specialties = Speciality::query()->orderBy('name')->get();
         $hasFilters = $request->filled('search')
             || $request->filled('speciality')
-            || $request->filled('specialty_id');
+            || $request->filled('specialty_id')
+            || filled($window);
 
         return view('patient.doctors.index', compact('doctors', 'specialties', 'hasFilters'));
+    }
+
+    /**
+     * @return array{0: string, 1: string}|null
+     */
+    private function availabilityWindow(?string $when): ?array
+    {
+        return match ($when) {
+            'today' => [now()->toDateString(), now()->toDateString()],
+            'today_tomorrow' => [now()->toDateString(), now()->addDay()->toDateString()],
+            '48h' => [now()->toDateString(), now()->addDays(2)->toDateString()],
+            '7d' => [now()->toDateString(), now()->addDays(7)->toDateString()],
+            default => null,
+        };
     }
 
     public function show(Doctor $doctor): View

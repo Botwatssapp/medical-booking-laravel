@@ -28,25 +28,77 @@ class DoctorController extends Controller
     {
         $this->authorize('viewAny', Doctor::class);
 
-        $allowedSorts = ['name' => 'users.name', 'speciality' => 'specialities.name'];
+        $search = trim((string) $request->query('search', ''));
+        $specialityId = $request->integer('speciality_id') ?: null;
+        $status = $request->query('status');
+        if (! in_array($status, ['validated', 'pending'], true)) {
+            $status = null;
+        }
+
+        $allowedSorts = [
+            'name' => 'users.name',
+            'speciality' => 'specialities.name',
+            'created' => 'doctors.created_at',
+        ];
         $sortKey = $request->query('sort', 'name');
         $sort = $allowedSorts[$sortKey] ?? 'users.name';
         $direction = $request->query('direction') === 'desc' ? 'desc' : 'asc';
 
-        $doctors = Doctor::with(['user', 'speciality'])
+        $doctorsQuery = Doctor::query()
+            ->with(['user', 'speciality'])
             ->join('users', 'users.id', '=', 'doctors.user_id')
             ->join('specialities', 'specialities.id', '=', 'doctors.speciality_id')
             ->select('doctors.*')
-            ->orderBy($sort, $direction)
-            ->paginate(15)
-            ->withQueryString();
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($inner) use ($search) {
+                    $inner->where('users.name', 'like', '%'.$search.'%')
+                        ->orWhere('users.email', 'like', '%'.$search.'%')
+                        ->orWhere('doctors.phone', 'like', '%'.$search.'%');
+                });
+            })
+            ->when($specialityId, fn ($query) => $query->where('doctors.speciality_id', $specialityId))
+            ->orderBy($sort, $direction);
+
+        $doctors = ($status === 'pending'
+            ? Doctor::query()->whereRaw('0 = 1')->paginate(15)
+            : $doctorsQuery->paginate(15)
+        )->withQueryString();
 
         $pendingDoctors = User::doctors()
             ->doesntHave('doctor')
+            ->when($status === 'validated', fn ($query) => $query->whereRaw('0 = 1'))
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($inner) use ($search) {
+                    $inner->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('email', 'like', '%'.$search.'%');
+                });
+            })
             ->orderByDesc('created_at')
             ->get();
 
-        return view('admin.doctors.index', compact('doctors', 'pendingDoctors'));
+        $totalDoctors = Doctor::query()->count();
+        $doctorsWithSlots = Doctor::query()
+            ->whereHas('availabilities', fn ($query) => $query->available())
+            ->count();
+
+        return view('admin.doctors.index', [
+            'doctors' => $doctors,
+            'pendingDoctors' => $pendingDoctors,
+            'specialties' => Speciality::query()->orderBy('name')->get(),
+            'filters' => [
+                'search' => $search,
+                'speciality_id' => $specialityId,
+                'status' => $status,
+                'sort' => array_key_exists($sortKey, $allowedSorts) ? $sortKey : 'name',
+                'direction' => $direction,
+            ],
+            'stats' => [
+                'total' => $totalDoctors,
+                'withSlots' => $doctorsWithSlots,
+                'withoutSlots' => max($totalDoctors - $doctorsWithSlots, 0),
+                'pending' => User::doctors()->doesntHave('doctor')->count(),
+            ],
+        ]);
     }
 
     public function create(): View
@@ -100,7 +152,22 @@ class DoctorController extends Controller
         $doctor->load(['user', 'speciality']);
         $specialties = Speciality::orderBy('name')->get();
 
-        return view('admin.doctors.edit', compact('doctor', 'specialties'));
+        $appointmentCount = $doctor->appointments()->count();
+        $monthAppointmentCount = $doctor->appointments()
+            ->whereBetween('appointment_date', [
+                now()->copy()->startOfMonth(),
+                now()->copy()->endOfMonth(),
+            ])
+            ->count();
+        $availableSlots = $doctor->availabilities()->available()->count();
+
+        return view('admin.doctors.edit', compact(
+            'doctor',
+            'specialties',
+            'appointmentCount',
+            'monthAppointmentCount',
+            'availableSlots'
+        ));
     }
 
     public function update(UpdateDoctorRequest $request, Doctor $doctor): RedirectResponse

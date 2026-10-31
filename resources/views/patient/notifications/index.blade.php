@@ -2,10 +2,10 @@
 @section('title', 'Mes notifications')
 
 @section('content')
-<div class="max-w-3xl mx-auto px-4 sm:px-8 py-8 sm:py-10">
+<div class="sc-page-narrow">
 
     {{-- En-tête --}}
-    <div class="flex items-center justify-between mb-8">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
             <h1 class="text-3xl font-bold text-[#0d1c2f]">Notifications</h1>
             <p class="text-[#526069] mt-1">Vos alertes et mises à jour de rendez-vous.</p>
@@ -117,7 +117,16 @@
         @endforelse
     </div>
 
-    <div class="mt-6">{{ $notifications->links() }}</div>
+    @if($notifications->total() > 0)
+        <div class="mt-6 bg-white p-4 rounded-2xl shadow-sm sc-pager">
+            <p class="sc-pager__label">
+                Affichage de <span class="font-semibold text-[#131b2e]">{{ $notifications->firstItem() }}</span>
+                à <span class="font-semibold text-[#131b2e]">{{ $notifications->lastItem() }}</span>
+                sur <span class="font-semibold text-[#131b2e]">{{ $notifications->total() }}</span> notifications
+            </p>
+            <div class="sc-pager__pages">{{ $notifications->links() }}</div>
+        </div>
+    @endif
 
 </div>
 @endsection

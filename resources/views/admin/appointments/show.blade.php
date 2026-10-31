@@ -3,7 +3,7 @@
 @section('page-subtitle', $appointment->patient->name.' · Dr '.$appointment->doctor->user->name)
 
 @section('admin-content')
-<div class="max-w-3xl space-y-6">
+<div class="sc-stack max-w-3xl">
 
     <a href="{{ route('admin.appointments.index') }}"
        class="inline-flex items-center gap-1.5 text-sm text-[#526069] hover:text-[#003f87] transition-colors">
@@ -92,15 +92,16 @@
                   class="flex items-center gap-3 flex-wrap">
                 @csrf @method('PATCH')
                 <label for="admin-status" class="text-sm font-medium text-[#0d1c2f] shrink-0">Changer le statut</label>
-                <select id="admin-status" name="status"
-                        class="border border-[#c2c6d4] rounded-xl px-4 py-2.5 text-sm text-[#0d1c2f] focus:outline-none focus:ring-2 focus:ring-[#003f87]/30">
-                    <option value="pending"   {{ $appointment->status === 'pending'   ? 'selected' : '' }}>En attente</option>
-                    <option value="accepted"  {{ $appointment->status === 'accepted'  ? 'selected' : '' }}>Accepté</option>
-                    <option value="rejected"  {{ $appointment->status === 'rejected'  ? 'selected' : '' }}>Refusé</option>
-                    <option value="cancelled" {{ $appointment->status === 'cancelled' ? 'selected' : '' }}>Annulé</option>
-                    <option value="completed" {{ $appointment->status === 'completed' ? 'selected' : '' }}>Terminé</option>
-                    <option value="missed"    {{ $appointment->status === 'missed'    ? 'selected' : '' }}>Non réalisé</option>
-                </select>
+                <div class="min-w-[14rem]">
+                    <x-ui.select name="status" id="admin-status" label="Changer le statut">
+                        <option value="pending"   {{ $appointment->status === 'pending'   ? 'selected' : '' }}>En attente</option>
+                        <option value="accepted"  {{ $appointment->status === 'accepted'  ? 'selected' : '' }}>Accepté</option>
+                        <option value="rejected"  {{ $appointment->status === 'rejected'  ? 'selected' : '' }}>Refusé</option>
+                        <option value="cancelled" {{ $appointment->status === 'cancelled' ? 'selected' : '' }}>Annulé</option>
+                        <option value="completed" {{ $appointment->status === 'completed' ? 'selected' : '' }}>Terminé</option>
+                        <option value="missed"    {{ $appointment->status === 'missed'    ? 'selected' : '' }}>Non réalisé</option>
+                    </x-ui.select>
+                </div>
                 <button type="submit"
                         class="px-5 py-2.5 bg-[#003f87] hover:opacity-90 text-white text-sm font-semibold rounded-xl transition-opacity">
                     Appliquer

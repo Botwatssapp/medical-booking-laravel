@@ -3,7 +3,7 @@
 @section('page-subtitle', 'Demande de ' . $appointment->patient->name)
 
 @section('doctor-content')
-<div class="max-w-2xl space-y-5">
+<div class="sc-stack max-w-2xl">
 
     <a href="{{ route('doctor.appointments.index') }}"
        class="inline-flex items-center gap-1.5 text-sm text-[#526069] hover:text-[#003f87] transition-colors">

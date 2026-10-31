@@ -2,7 +2,7 @@
 @section('title', 'Modifier les notes')
 
 @section('content')
-<div class="max-w-2xl mx-auto px-4 sm:px-8 py-8 sm:py-10">
+<div class="sc-page-narrow max-w-2xl">
 
     <a href="{{ route('patient.appointments.show', $appointment) }}"
        class="text-[#003f87] hover:underline text-sm mb-6 inline-flex items-center gap-1">

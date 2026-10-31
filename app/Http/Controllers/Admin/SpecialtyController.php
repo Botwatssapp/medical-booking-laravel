@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSpecialtyRequest;
 use App\Http\Requests\UpdateSpecialtyRequest;
+use App\Models\Appointment;
+use App\Models\Doctor;
 use App\Models\Speciality;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -22,12 +25,67 @@ class SpecialtyController extends Controller
      *
      * @return View
      */
-    public function index(\Illuminate\Http\Request $request): View
+    public function index(Request $request): View
     {
-        $direction   = $request->query('direction') === 'desc' ? 'desc' : 'asc';
-        $specialties = Speciality::orderBy('name', $direction)->paginate(15)->withQueryString();
+        $search = trim((string) $request->query('search', ''));
+        $filter = $request->query('filter');
+        if (! in_array($filter, ['with', 'empty'], true)) {
+            $filter = null;
+        }
 
-        return view('admin.specialties.index', compact('specialties'));
+        $sortParam = (string) $request->query('sort', 'name');
+        if ($sortParam === 'name' && $request->query('direction') === 'desc') {
+            $sortParam = 'name_desc';
+        }
+
+        $sortMap = [
+            'name' => ['name', 'asc'],
+            'name_desc' => ['name', 'desc'],
+            'doctors' => ['doctors_count', 'asc'],
+            'doctors_desc' => ['doctors_count', 'desc'],
+            'created' => ['created_at', 'desc'],
+        ];
+        [$sortColumn, $direction] = $sortMap[$sortParam] ?? ['name', 'asc'];
+        if (! isset($sortMap[$sortParam])) {
+            $sortParam = 'name';
+        }
+
+        $specialties = Speciality::query()
+            ->withCount('doctors')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($inner) use ($search) {
+                    $inner->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('description', 'like', '%'.$search.'%');
+                });
+            })
+            ->when($filter === 'with', fn ($query) => $query->has('doctors'))
+            ->when($filter === 'empty', fn ($query) => $query->doesntHave('doctors'))
+            ->orderBy($sortColumn, $direction)
+            ->paginate(15)
+            ->withQueryString();
+
+        $total = Speciality::query()->count();
+        $withDoctors = Speciality::query()->has('doctors')->count();
+        $withoutDoctors = Speciality::query()->doesntHave('doctors')->count();
+        $doctorCount = Doctor::query()->count();
+
+        $stats = [
+            'total' => $total,
+            'withDoctors' => $withDoctors,
+            'withoutDoctors' => $withoutDoctors,
+            'doctors' => $doctorCount,
+            'avgPerSpecialty' => $total > 0 ? round($doctorCount / $total, 1) : 0,
+            'coverage' => $total > 0 ? (int) round(($withDoctors / $total) * 100) : 0,
+        ];
+
+        $filters = [
+            'search' => $search,
+            'filter' => $filter,
+            'sort' => $sortParam,
+            'direction' => $direction,
+        ];
+
+        return view('admin.specialties.index', compact('specialties', 'stats', 'filters'));
     }
 
     /**
@@ -64,7 +122,29 @@ class SpecialtyController extends Controller
      */
     public function edit(Speciality $specialty): View
     {
-        return view('admin.specialties.edit', compact('specialty'));
+        $specialty->load(['doctors.user']);
+
+        $doctorIds = $specialty->doctors->pluck('id');
+
+        $appointmentCount = $doctorIds->isEmpty()
+            ? 0
+            : Appointment::query()->whereIn('doctor_id', $doctorIds)->count();
+
+        $monthAppointmentCount = $doctorIds->isEmpty()
+            ? 0
+            : Appointment::query()
+                ->whereIn('doctor_id', $doctorIds)
+                ->whereBetween('appointment_date', [
+                    now()->copy()->startOfMonth(),
+                    now()->copy()->endOfMonth(),
+                ])
+                ->count();
+
+        return view('admin.specialties.edit', compact(
+            'specialty',
+            'appointmentCount',
+            'monthAppointmentCount'
+        ));
     }
 
     /**

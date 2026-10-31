@@ -27,8 +27,17 @@ class AppointmentController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = auth()->user()->appointments()
-            ->with(['doctor.user', 'doctor.speciality', 'availability']);
+        $patientId = (int) $request->user()->id;
+        $relations = ['doctor.user', 'doctor.speciality', 'availability'];
+        $base = Appointment::query()->where('patient_id', $patientId);
+
+        $totalCount = (clone $base)->count();
+        $pendingCount = (clone $base)->pending()->count();
+        $upcomingAcceptedCount = (clone $base)->accepted()->upcoming()->count();
+        $completedCount = (clone $base)->completed()->count();
+        $cancelledCount = (clone $base)->cancelled()->count();
+        $rejectedCount = (clone $base)->rejected()->count();
+        $missedCount = (clone $base)->missed()->count();
 
         $allowedStatuses = [
             Appointment::STATUS_PENDING,
@@ -39,14 +48,74 @@ class AppointmentController extends Controller
             Appointment::STATUS_MISSED,
         ];
 
-        if ($request->filled('status') && in_array($request->status, $allowedStatuses, true)) {
-            $query->where('status', $request->status);
+        $status = (string) $request->query('status', '');
+        $search = trim((string) $request->query('search', ''));
+        $period = (string) $request->query('period', '');
+        $allowedPeriods = ['month', '3months', 'year'];
+
+        if (! in_array($period, $allowedPeriods, true)) {
+            $period = '';
+        }
+
+        $query = Appointment::query()
+            ->where('patient_id', $patientId)
+            ->with($relations);
+
+        if ($status === 'upcoming') {
+            $query->accepted()->upcoming();
+        } elseif (in_array($status, $allowedStatuses, true)) {
+            $query->where('status', $status);
+        } else {
+            $status = '';
+        }
+
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->whereHas('doctor.user', fn ($users) => $users->where('name', 'like', '%'.$search.'%'))
+                    ->orWhereHas('doctor.speciality', fn ($specialities) => $specialities->where('name', 'like', '%'.$search.'%'));
+            });
+        }
+
+        if ($period === 'month') {
+            $query->whereBetween('appointment_date', [
+                now()->copy()->startOfMonth(),
+                now()->copy()->endOfMonth(),
+            ]);
+        } elseif ($period === '3months') {
+            $query->where('appointment_date', '>=', now()->copy()->subMonths(3)->startOfDay());
+        } elseif ($period === 'year') {
+            $query->whereYear('appointment_date', now()->year);
         }
 
         $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
         $appointments = $query->orderBy('appointment_date', $direction)->paginate(10)->withQueryString();
 
-        return view('patient.appointments.index', compact('appointments'));
+        $nextAppointment = Appointment::query()
+            ->where('patient_id', $patientId)
+            ->whereIn('status', [
+                Appointment::STATUS_PENDING,
+                Appointment::STATUS_ACCEPTED,
+            ])
+            ->upcoming()
+            ->with($relations)
+            ->orderBy('appointment_date')
+            ->first();
+
+        return view('patient.appointments.index', [
+            'appointments' => $appointments,
+            'nextAppointment' => $nextAppointment,
+            'totalCount' => $totalCount,
+            'pendingCount' => $pendingCount,
+            'upcomingAcceptedCount' => $upcomingAcceptedCount,
+            'completedCount' => $completedCount,
+            'cancelledCount' => $cancelledCount,
+            'rejectedCount' => $rejectedCount,
+            'missedCount' => $missedCount,
+            'currentStatus' => $status,
+            'currentSearch' => $search,
+            'currentPeriod' => $period,
+            'currentDir' => $direction,
+        ]);
     }
 
     /**
@@ -73,7 +142,7 @@ class AppointmentController extends Controller
         $data = $request->validated();
 
         try {
-            $this->appointments->create(
+            $appointment = $this->appointments->create(
                 $request->user(),
                 (int) $data['doctor_id'],
                 (int) $data['availability_id'],
@@ -83,7 +152,7 @@ class AppointmentController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('patient.appointments.index')
+        return redirect()->route('patient.appointments.show', $appointment)
             ->with('success', 'Demande de rendez-vous envoyée. Elle est en attente de confirmation.');
     }
 
@@ -94,7 +163,7 @@ class AppointmentController extends Controller
     {
         $this->authorize('view', $appointment);
 
-        $appointment->load(['doctor.user', 'doctor.speciality', 'availability']);
+        $appointment->load(['patient', 'doctor.user', 'doctor.speciality', 'availability']);
 
         return view('patient.appointments.show', compact('appointment'));
     }

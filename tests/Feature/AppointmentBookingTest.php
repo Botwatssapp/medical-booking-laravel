@@ -32,13 +32,20 @@ class AppointmentBookingTest extends TestCase
     {
         ['patient' => $patient, 'doctor' => $doctor, 'slot' => $slot] = $this->bookingContext();
 
-        $this->actingAs($patient)
+        $response = $this->actingAs($patient)
             ->post(route('patient.appointments.store'), [
                 'doctor_id' => $doctor->id,
                 'availability_id' => $slot->id,
                 'notes' => 'Consultation',
-            ])
-            ->assertRedirect(route('patient.appointments.index'));
+            ]);
+
+        $created = Appointment::query()
+            ->where('patient_id', $patient->id)
+            ->where('availability_id', $slot->id)
+            ->first();
+
+        $this->assertNotNull($created);
+        $response->assertRedirect(route('patient.appointments.show', $created));
 
         $this->assertDatabaseHas('appointments', [
             'patient_id' => $patient->id,
@@ -55,10 +62,18 @@ class AppointmentBookingTest extends TestCase
         ['patient' => $patientA, 'doctor' => $doctor, 'slot' => $slot] = $this->bookingContext();
         $patientB = User::factory()->patient()->create();
 
-        $this->actingAs($patientA)->post(route('patient.appointments.store'), [
+        $firstBooking = $this->actingAs($patientA)->post(route('patient.appointments.store'), [
             'doctor_id' => $doctor->id,
             'availability_id' => $slot->id,
-        ])->assertRedirect(route('patient.appointments.index'));
+        ]);
+
+        $createdA = Appointment::query()
+            ->where('patient_id', $patientA->id)
+            ->where('availability_id', $slot->id)
+            ->first();
+
+        $this->assertNotNull($createdA);
+        $firstBooking->assertRedirect(route('patient.appointments.show', $createdA));
 
         $this->actingAs($patientB)
             ->from(route('patient.appointments.create', ['availability_id' => $slot->id]))
@@ -115,12 +130,19 @@ class AppointmentBookingTest extends TestCase
         $appointment = $this->appointments->create($patientA, $doctor->id, $slot->id);
         $this->appointments->reject($appointment);
 
-        $this->actingAs($patientB)
+        $rebook = $this->actingAs($patientB)
             ->post(route('patient.appointments.store'), [
                 'doctor_id' => $doctor->id,
                 'availability_id' => $slot->id,
-            ])
-            ->assertRedirect(route('patient.appointments.index'));
+            ]);
+
+        $createdB = Appointment::query()
+            ->where('patient_id', $patientB->id)
+            ->where('availability_id', $slot->id)
+            ->first();
+
+        $this->assertNotNull($createdB);
+        $rebook->assertRedirect(route('patient.appointments.show', $createdB));
 
         $this->assertDatabaseHas('appointments', [
             'patient_id' => $patientB->id,

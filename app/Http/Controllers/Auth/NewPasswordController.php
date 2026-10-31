@@ -21,7 +21,21 @@ class NewPasswordController extends Controller
      */
     public function create(Request $request): View
     {
-        return view('auth.reset-password', ['request' => $request]);
+        $email = (string) (
+            $request->query('email')
+            ?: $request->old('email')
+            ?: $request->input('email')
+            ?: ''
+        );
+        $resetUser = $email !== ''
+            ? User::query()->where('email', $email)->first()
+            : null;
+
+        return view('auth.reset-password', [
+            'request' => $request,
+            'resetUser' => $resetUser,
+            'expireMinutes' => (int) config('auth.passwords.users.expire', 60),
+        ]);
     }
 
     /**
@@ -56,8 +70,36 @@ class NewPasswordController extends Controller
         // the application's home authenticated view. If there is an error we can
         // redirect them back to where they came from with their error message.
         return $status == Password::PASSWORD_RESET
-                    ? redirect()->route('login')->with('status', __($status))
+                    ? redirect()->route('password.updated')->with($this->successPayload($request->email))
                     : back()->withInput($request->only('email'))
                         ->withErrors(['email' => __($status)]);
+    }
+
+    public function confirmed(Request $request): View|RedirectResponse
+    {
+        if (! $request->session()->get('password_reset_confirmed')) {
+            return redirect()->route('login');
+        }
+
+        return view('auth.password-updated', [
+            'name' => $request->session()->get('password_reset_name'),
+            'email' => $request->session()->get('password_reset_email'),
+            'role' => $request->session()->get('password_reset_role'),
+        ]);
+    }
+
+    /**
+     * @return array{password_reset_confirmed: true, password_reset_name: ?string, password_reset_email: string, password_reset_role: ?string}
+     */
+    private function successPayload(string $email): array
+    {
+        $user = User::query()->where('email', $email)->first();
+
+        return [
+            'password_reset_confirmed' => true,
+            'password_reset_name' => $user?->name,
+            'password_reset_email' => $user?->email ?? $email,
+            'password_reset_role' => $user?->role,
+        ];
     }
 }

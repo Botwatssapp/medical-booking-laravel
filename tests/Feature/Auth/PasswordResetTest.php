@@ -38,10 +38,18 @@ class PasswordResetTest extends TestCase
 
         $this->post('/forgot-password', ['email' => $user->email]);
 
-        Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
-            $response = $this->get('/reset-password/'.$notification->token);
+        Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
+            $response = $this->get('/reset-password/'.$notification->token.'?email='.$user->email);
 
-            $response->assertStatus(200);
+            $response
+                ->assertStatus(200)
+                ->assertSee('Nouveau mot de passe')
+                ->assertSee($user->name)
+                ->assertDontSee('Laravel')
+                ->assertDontSee('CNDP')
+                ->assertDontSee('Karim Tazi')
+                ->assertDontSee('TKN-8831')
+                ->assertDontSee('Atlas#2024Health!');
 
             return true;
         });
@@ -65,9 +73,29 @@ class PasswordResetTest extends TestCase
 
             $response
                 ->assertSessionHasNoErrors()
-                ->assertRedirect(route('login'));
+                ->assertRedirect(route('password.updated'));
+
+            $this->get(route('password.updated'))
+                ->assertOk()
+                ->assertSee('Mot de passe modifié')
+                ->assertSee($user->name)
+                ->assertDontSee('CNDP')
+                ->assertDontSee('HDS')
+                ->assertDontSee('AES')
+                ->assertDontSee('HIPAA')
+                ->assertDontSee('Karim Tazi')
+                ->assertDontSee('05 22 89 00 00')
+                ->assertDontSee('MA-739201')
+                ->assertDontSee('8F2a-99X')
+                ->assertDontSee('Argon2id');
 
             return true;
         });
+    }
+
+    public function test_password_updated_page_requires_reset_session(): void
+    {
+        $this->get(route('password.updated'))
+            ->assertRedirect(route('login'));
     }
 }
